@@ -1,4 +1,6 @@
 import { PaintTool } from './tools/paintTool.js';
+import { DebugLogger } from './tools/debugLogger.js';
+import { TouchInputManager } from './tools/touchInputManager.js';
 
 function log(text) {
     console.log(`Error: ${text}`);
@@ -6,7 +8,9 @@ function log(text) {
 }
 
 
-const paintTool = new PaintTool();
+const debugLogger = new DebugLogger();
+const paintTool = new PaintTool(debugLogger);
+const touchInputManager = new TouchInputManager(paintTool, debugLogger);
 
 paintTool.init()
 

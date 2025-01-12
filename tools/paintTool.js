@@ -1,5 +1,6 @@
 export class PaintTool {
-    constructor() {
+    constructor(debugLogger) {
+        this.debugLogger = debugLogger;
         this.color = '#990099';
         
         this.eraser = {
@@ -42,44 +43,12 @@ export class PaintTool {
                 value: "source-over",
             },
             {
-                label: "Add",
-                value: "lighter",
-            },
-            {
-                label: "Max",
+                label: "Lighten",
                 value: "lighten",
-            },
-            {
-                label: "Multiply",
-                value: "multiply",
-            },
-            {
-                label: "Screen",
-                value: "screen",
-            },
-            {
-                label: "Overlay",
-                value: "overlay",
             },
             {
                 label: "Darken",
                 value: "darken",
-            },
-            {
-                label: "Hue",
-                value: "hue",
-            },
-            {
-                label: "Saturation",
-                value: "saturation",
-            },
-            {
-                label: "Color",
-                value: "color",
-            },
-            {
-                label: "Luminosity",
-                value: "luminosity",
             },
         ]
         this.blendMode = this.blendModes[0].value;
@@ -336,6 +305,8 @@ export class PaintTool {
             this.blendMode = event.target.value;
             this.ctx.globalCompositeOperation = this.blendMode;
         });
+        blendSelect.style.width = "160px";
+        blendSelect.style.height = "36px";
         blendSelect.id = "blend-mode-select";
         blendSelect.value = this.blendMode;
 
@@ -467,8 +438,8 @@ export class PaintTool {
         // this.baseCanvas.style.display = 'none';
 
         // setup to trigger drawing on mouse or touch
-        this.drawTouch();
-        this.drawPointer();
+        // this.drawTouch();
+        // this.drawPointer();
         this.drawMouse();
         this.keyboardShortcuts();
 
@@ -588,6 +559,12 @@ export class PaintTool {
             this.drawPoint(posX, posY)
     }
 
+    cancelDrawing() {
+        this.state.isDrawing = false;
+        this.state.currentPath = {};
+        this.redrawCanvas();
+    }
+
     drawPoint(x, y) {
         this.ctx.beginPath();
         this.ctx.arc(x, y, this.lineWidth.value * 0.5, 0, Math.PI * 2);
@@ -654,22 +631,27 @@ export class PaintTool {
         const startDrawing = this.startDrawing.bind(this);
         const draw = this.draw.bind(this);
         const stopDrawing = this.stopDrawing.bind(this);
-        var start = function (e) {
-            const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;
-            const y = e.changedTouches[0].pageY - e.touches[0].target.offsetTop;
-            startDrawing(x, y);
-        };
+        let drawingIdentifier;
         var move = function (e) {
             e.preventDefault();
-            const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;
-            const y = e.changedTouches[0].pageY - e.touches[0].target.offsetTop;
-            draw(x, y);
+            for(let i = 0; i < e.touches.length; i++){
+                const touch = e.touches[i];
+                if(touch.identifier != drawingIdentifier)
+                    continue;
+                drawingIdentifier = e.identifier;
+                const x = touch.pageX - touch.target.offsetLeft;
+                const y = touch.pageY - touch.target.offsetTop;
+                draw(x, y);
+            }
         };
         var stop = function (e) {
+            for(let i = 0; i < e.touches.length; i++){
+                if(e.touches[i].identifier == drawingIdentifier)
+                    return;
+            }
             stopDrawing(e);
         };
 
-        this.canvas.addEventListener("touchstart", start, false);
         this.canvas.addEventListener("touchmove", move, false);
         this.canvas.addEventListener("touchend", stop, false);
 
@@ -678,6 +660,20 @@ export class PaintTool {
         const TAP_THRESHOLD = 200; // Maximum time in ms 
 
         document.addEventListener('touchstart', (e) => {
+            if(this.isDrawing)
+                return;
+
+            for(let i = 0; i < e.touches.length; i++){
+                const touch = e.touches[i];
+                // if(touch.touchType != 'stylus')
+                //     continue;
+                drawingIdentifier = e.identifier;
+                const x = touch.pageX - touch.target.offsetLeft;
+                const y = touch.pageY - touch.target.offsetTop;
+                this.startDrawing(x, y);
+                return;
+            }
+
             touchCount = e.touches.length;
             touchStartTime = Date.now();
 
@@ -685,9 +681,14 @@ export class PaintTool {
             if (touchCount >= 2) {
                 e.preventDefault();
             }
+
+
         }, { passive: false });
 
         document.addEventListener('touchend', (e) => {
+            if(this.isDrawing)
+                return;
+
             const touchDuration = Date.now() - touchStartTime;
 
             if (touchDuration < TAP_THRESHOLD) {
@@ -771,41 +772,16 @@ export class PaintTool {
         document.addEventListener("mouseup", stop, false);
     };
 
-    // undo() {
-    //     console.log("undo");
-    //     // does undo stuff
-    // }
-
-    // redo() {
-    //     console.log("redo");
-    //     // does redo stuff
-    // }
-
-    // keyboardShortcuts() {
-    //     const handleShortcut = (e) => {
-    //         if (e.key === "z" && (e.ctrlKey || e.metaKey)) {
-    //             e.preventDefault();
-    //             if(e.shiftKey) {
-    //                 this.redo();
-    //             }
-    //             else {
-    //                 this.undo();
-    //             }
-    //         }
-    //     }
-    //     document.addEventListener("keydown", handleShortcut);
-    // }
-
     keyboardShortcuts() {
         const handleShortcut = (e) => {
             if (e.key === "z" && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 if(e.shiftKey) {
-                    console.log("redo");
+                    this.debugLogger.log("redo keyboard shortcut");
                     this.redo();
                 }
                 else {
-                    console.log("undo");
+                    this.debugLogger.log("undo keyboard shortcut");
                     this.undo();
                 }
             }

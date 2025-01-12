@@ -375,6 +375,14 @@ input[type="range"]::-webkit-slider-thumb {
   transform: translate(-50%, -50%);
   padding: 20px;
 }
-#about.hide {
+#about.hide, #debugBox.hide {
   display: none;
+}
+
+#debugBox {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  max-height: 300px;
+  overflow-y: scroll;
 }
