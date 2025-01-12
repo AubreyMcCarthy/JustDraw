@@ -112,9 +112,6 @@ a:hover {
 input[type="file"] {
   display: none;
 }
-input[type="color"] {
-  display: none;
-}
 
 button, .custom-file-upload {
   box-sizing: border-box;
@@ -140,8 +137,8 @@ button, .custom-file-upload {
 
 input[type="color" i] {
   border-radius: 4px;
-  inline-size: 42px;
-  height: 42px;
+  inline-size: 60px;
+  height: 60px;
   /* padding: 8px, 16px; */
   /* block-size: 30px; */
   /* border-width: 1px; */
@@ -374,6 +371,9 @@ input[type="range"]::-webkit-slider-thumb {
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 20px;
+  overflow-y: auto;
+  max-width: 40vw;
+  max-height: 40vw;
 }
 #aboutContainer.hide, #debugBox.hide {
   display: none;

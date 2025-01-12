@@ -13,7 +13,7 @@ export class PaintTool {
         }
         this.polyFill = {
             label: "Poly Fill",
-            tooltip: "fill Area",
+            tooltip: "fill area",
             icon: "img/icon/brush_flat.svg",
             value: false,
             defaultValue: false,
@@ -49,6 +49,14 @@ export class PaintTool {
             {
                 label: "Darken",
                 value: "darken",
+            },
+            {
+                label: "Ontop",
+                value: "source-atop",
+            },
+            {
+                label: "Under",
+                value: "destination-over",
             },
         ]
         this.blendMode = this.blendModes[0].value;
@@ -311,14 +319,7 @@ export class PaintTool {
         blendSelect.value = this.blendMode;
 
         this.currentColor = this.addSelectButton({icon: "", tooltip: ""}, controls);
-        this.currentColor.style.width = '50px';
-        this.currentColor.style.height = '50px';
 
-        // <label for="fileInput" class="custom-file-upload tooltip">📂<span class="tooltiptext">Open Image</span></label>
-        const colorSelectLabel = document.createElement('label');
-        colorSelectLabel.htmlFor = 'color-picker';
-        this.loadSVGIcon("img/icon/color_palette.svg", colorSelectLabel, "Color Select");
-        controls.appendChild(colorSelectLabel);
         
         const colorSelect = document.createElement('input');
         this.colorSelect = colorSelect;
@@ -331,12 +332,10 @@ export class PaintTool {
         });
         controls.appendChild(colorSelect);
         // <input type="color" id="html5colorpicker" onchange="clickColor(0, -1, -1, 5)" value="#ff0000" style="width:85%;"></input>
-
-        this.setButtonColor(this.currentColor, this.color);
         
         const radiusPreviewContainer = document.createElement('div');
         radiusPreviewContainer.style.width = "100%";
-        radiusPreviewContainer.style.height = `${this.lineWidth.max*2}px`;
+        // radiusPreviewContainer.style.height = `${this.lineWidth.max*2}px`;
         // radiusPreviewContainer.style.backgroundColor = "#993366";
         radiusPreviewContainer.id = 'raidus-preview-container';
         
