@@ -1,5 +1,5 @@
 export class DebugLogger {
-    constructor() {
+    constructor(startHidden, hideElement) {
         // create logging element
         const box = document.createElement('div');
         box.classList.add('rectangle');
@@ -8,6 +8,10 @@ export class DebugLogger {
         this.box = box;
         
         this.messages = "Debug logger started!";
+        if(startHidden && !this.box.classList.contains('hide'))
+            this.box.classList.add('hide');
+
+        hideElement.addEventListener("dblclick", (event) => this.toggle());
     }
 
     log(value) {
