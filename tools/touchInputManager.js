@@ -10,7 +10,7 @@ export class TouchInputManager {
         this.handleTouchMove = this.handleTouchMove.bind(this);
         this.handleTouchEnd = this.handleTouchEnd.bind(this);
 
-        this.attach(document.body);
+        this.attach(this.paintTool.canvas);
     }
 
     reset() {
@@ -25,6 +25,9 @@ export class TouchInputManager {
         this.tapCount = 0;
         // Track number of concurrent fingers while drawing
         this.activeFingerCount = 0;
+
+        this.tapGestureFingerCount = 0;
+        this.tapGestureIntiated = 0;
     }
 
     attach(element) {
@@ -65,21 +68,14 @@ export class TouchInputManager {
 
                 if (!this.isDrawing) {
                     // Handle taps when not drawing
-                    const now = Date.now();
-                    if (now - this.lastTapTime < 300) {
-                        // Double tap
-                        this.tapCount++;
-                        if (this.tapCount === 2) {
-                            this.undo();
-                            this.tapCount = 0;
-                        } else if (this.tapCount === 3) {
-                            this.redo();
-                            this.tapCount = 0;
-                        }
-                    } else {
-                        this.tapCount = 1;
+                    if(this.activeFingerCount == 1) {
+                        this.tapGestureIntiated = Date.now();
                     }
-                    this.lastTapTime = now;
+
+                    this.tapGestureFingerCount = Math.max(
+                        this.tapGestureFingerCount,
+                        this.activeFingerCount
+                    );
                 }
             }
         }
@@ -114,6 +110,20 @@ export class TouchInputManager {
             } else {
                 // Decrement finger count if this wasn't the pencil
                 this.activeFingerCount = Math.max(0, this.activeFingerCount - 1);
+
+                if(this.activeFingerCount === 0) {
+                    const TAP_THRESHOLD = 300; // Maximum time in ms 
+                    const touchDuration = Date.now() - this.tapGestureIntiated;
+
+                    if (touchDuration < TAP_THRESHOLD) {
+                        if (this.tapGestureFingerCount === 2) {
+                            this.undo();
+                        }
+                        else if (this.tapGestureFingerCount === 3) {
+                            this.redo();
+                        }
+                    }
+                }
             }
         }
 
@@ -127,12 +137,12 @@ export class TouchInputManager {
 
     // Placeholder methods to be implemented by the user
     startDrawing(x, y) {
-        this.debugLogger.log('Start drawing at:', x, y);
+        this.debugLogger.log(`Start drawing at: ${x}, ${y}`);
         this.paintTool.startDrawing(x, y);
     }
 
     draw(x, y, fingerCount) {
-        this.debugLogger.log('Drawing at:', x, y, 'with', fingerCount, 'fingers');
+        // this.debugLogger.log('Drawing at:', x, y, 'with', fingerCount, 'fingers');
         this.paintTool.draw(x, y);
     }
 

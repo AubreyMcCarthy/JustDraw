@@ -10,9 +10,9 @@ function log(text) {
 
 const debugLogger = new DebugLogger();
 const paintTool = new PaintTool(debugLogger);
-const touchInputManager = new TouchInputManager(paintTool, debugLogger);
 
-paintTool.init()
+paintTool.init();
+const touchInputManager = new TouchInputManager(paintTool, debugLogger);
 
 const aboutBtn = document.getElementById('aboutBtn');
 const about = document.getElementById('about');
