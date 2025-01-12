@@ -13,11 +13,15 @@ export class DebugLogger {
     log(value) {
         console.log(value);
         this.messages += '\n' + value;
+        this.setMessage();
+    }
+    setMessage() {
         this.box.innerText = this.messages;
+        this.box.scrollTop = this.box.scrollHeight;
     }
 
     toggle() {
         this.box.classList.toggle('hide');
-        this.box.innerText = this.messages;
+        this.setMessage();
     }
 }

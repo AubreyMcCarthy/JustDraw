@@ -20,9 +20,7 @@ export class TouchInputManager {
         this.pencilTouch = null;
         // Track if we're currently drawing
         this.isDrawing = false;
-        // Track tap timing for gestures
-        this.lastTapTime = 0;
-        this.tapCount = 0;
+
         // Track number of concurrent fingers while drawing
         this.activeFingerCount = 0;
 
@@ -123,15 +121,9 @@ export class TouchInputManager {
                             this.redo();
                         }
                     }
+                    this.tapGestureFingerCount = 0;
                 }
             }
-        }
-
-        // Reset tap tracking if all touches are gone
-        if (this.touches.size === 0) {
-            setTimeout(() => {
-                this.tapCount = 0;
-            }, 300);
         }
     }
 
