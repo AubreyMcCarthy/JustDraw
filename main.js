@@ -9,6 +9,7 @@ function log(text) {
 const paintTool = new PaintTool();
 
 paintTool.init()
-window.onbeforeunload = function() {
-    return true;
-};
+
+const aboutBtn = document.getElementById('aboutBtn');
+const about = document.getElementById('about');
+aboutBtn.addEventListener('click', () => about.classList.toggle('hide'));

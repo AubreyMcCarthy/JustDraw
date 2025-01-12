@@ -6,6 +6,14 @@ body {
   background-color: #212121;
   touch-action: none;
   font-family: system-ui, -apple-system, sans-serif;
+  user-select: none;
+}
+
+a {
+  color: white;
+}
+a:hover {
+  color: #c83b8b;
 }
 
 .doc {
@@ -82,6 +90,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 10px;
   background-color: rgb(40, 41, 45);
+  border-radius: 5px;
 }
 
 #controls-tool-specific {
@@ -121,6 +130,7 @@ button, .custom-file-upload {
   cursor: pointer;
   user-select: none;
   font-size: 16px;
+  padding: 0;
 }
 .icon-button svg {
   width: 100%;
@@ -352,3 +362,19 @@ input[type="range"]::-webkit-slider-thumb {
   align-content: center;
 }
 
+#aboutBtn {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+}
+
+#about {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px;
+}
+#about.hide {
+  display: none;
+}

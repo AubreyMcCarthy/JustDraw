@@ -25,6 +25,15 @@ export class PaintTool {
             min: 1,
             max: 65,
             step: 4,
+            validate() {
+                if(this.value < this.min)
+                    this.value = this.min
+                else if(this.value > this.max)
+                    this.value = this.max
+                this.slider.value = this.value;
+
+            },
+            
         };
 
         this.blendModes = [
@@ -375,7 +384,7 @@ export class PaintTool {
 
         this.newCanvas();
         this.dragAndDropControls(controls, headerSpan);
-        
+        // this.resize();
     }
 
     dragAndDropControls(controls, handle) {
@@ -479,6 +488,30 @@ export class PaintTool {
         this.selectColor();
     }
 
+    // resize() {
+    //     window.addEventListener("resize", (event) => {
+    //         if(window.innerWidth <= this.canvas.width && window.innerHeight <= this.canvas.height)
+    //             return;
+
+    //         const width = Math.max(window.innerWidth, this.canvas.width);
+    //         const height = Math.max(window.innerWidth, this.canvas.height);
+
+            
+    //         this.canvasToPng(this.historyCanvas, (img) => {
+    //             this.canvas.width = this.historyCanvas.width = width;
+    //             this.canvas.height = this.historyCanvas.height = height;
+
+    //             // Clear active canvas
+    //             this.historyCtx.clearRect(0, 0, width, height);
+
+    //             // Copy history canvas content to active canvas
+    //             this.historyCtx.drawImage(img, 0, 0);
+
+    //             this.redrawCanvas();
+    //         })
+    //     });
+    // }
+
 
     apply() {
         // new image with contents
@@ -487,6 +520,12 @@ export class PaintTool {
             this.close();
         }, 'image/png');
 
+    }
+
+    canvasToPng(canvas, action) {
+        canvas.toBlob(async (blob) => {
+            action(blob);
+        }, 'image/png');
     }
 
     selectColor() {
@@ -604,6 +643,9 @@ export class PaintTool {
                 lineWidth: this.ctx.lineWidth,
             });
         }
+        window.onbeforeunload = function() {
+            return true;
+        };
     }
 
 
@@ -729,20 +771,59 @@ export class PaintTool {
         document.addEventListener("mouseup", stop, false);
     };
 
+    // undo() {
+    //     console.log("undo");
+    //     // does undo stuff
+    // }
+
+    // redo() {
+    //     console.log("redo");
+    //     // does redo stuff
+    // }
+
+    // keyboardShortcuts() {
+    //     const handleShortcut = (e) => {
+    //         if (e.key === "z" && (e.ctrlKey || e.metaKey)) {
+    //             e.preventDefault();
+    //             if(e.shiftKey) {
+    //                 this.redo();
+    //             }
+    //             else {
+    //                 this.undo();
+    //             }
+    //         }
+    //     }
+    //     document.addEventListener("keydown", handleShortcut);
+    // }
+
     keyboardShortcuts() {
-        const undo = this.undo.bind(this);
-        const redo = this.redo.bind(this);
-        function handleShortcut(e) {
+        const handleShortcut = (e) => {
             if (e.key === "z" && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 if(e.shiftKey) {
                     console.log("redo");
-                    redo();
+                    this.redo();
                 }
                 else {
                     console.log("undo");
-                    undo();
+                    this.undo();
                 }
+            }
+            else if(e.key === 'e') {
+                this.eraser.btn.click();
+            }
+            else if(e.key === 'f') {
+                this.polyFill.btn.click();
+            }
+            else if(e.key === '[') {
+                this.lineWidth.value -= this.lineWidth.step;
+                this.lineWidth.validate();
+                this.setPreview();
+            }
+            else if(e.key === ']') {
+                this.lineWidth.value += this.lineWidth.step;
+                this.lineWidth.validate();
+                this.setPreview();
             }
         }
         document.addEventListener("keydown", handleShortcut);
