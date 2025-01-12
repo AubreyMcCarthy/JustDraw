@@ -193,7 +193,7 @@ button:disabled {
   /* transition: opacity 1s, visibility 1s; */
 }
 
-.tooltip .tooltiptext::after {
+.hasHover .tooltip .tooltiptext::after {
   content: "";
   position: absolute;
   bottom: 100%;
@@ -204,7 +204,7 @@ button:disabled {
   border-color: transparent transparent rgb(60, 62, 65) transparent;
 }
 
-.tooltip:hover .tooltiptext {
+.hasHover .tooltip:hover .tooltiptext {
   visibility: visible;
   opacity: 1;
 }
@@ -384,6 +384,7 @@ input[type="range"]::-webkit-slider-thumb {
   right: 10px;
   bottom: 10px;
   max-height: 300px;
+  max-width: 400px;
   overflow-y: scroll;
 }
 

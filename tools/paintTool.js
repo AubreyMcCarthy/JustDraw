@@ -538,10 +538,17 @@ export class PaintTool {
         //     paintAction: this.PaintActions.CanvasFill,
         //     blend: this.ctx.globalCompositeOperation,
         // });
+        this.addToUndoStack({
+            color: this.color,
+            colorBefore: this.canvas.style.backgroundColor,
+            paintAction: this.PaintActions.CanvasFill,    
+        });
         this.canvas.style.backgroundColor = this.color;
     }
 
     startDrawing(posX, posY) {
+        if(this.state.isDrawing) return;
+
         this.state.isDrawing = true;
         this.state.currentPath = {
             points: [],
@@ -623,6 +630,7 @@ export class PaintTool {
         window.onbeforeunload = function() {
             return true;
         };
+        this.debugLogger.log("stopped drawing");
     }
 
 
@@ -811,7 +819,12 @@ export class PaintTool {
 
         const pathToUndo = this.state.paths.pop();
         this.state.redoPaths.push(pathToUndo);
-        this.redrawCanvas();
+        if(pathToUndo.paintAction === this.PaintActions.CanvasFill) {
+            this.canvas.style.backgroundColor = pathToUndo.colorBefore;
+        }
+        else {
+            this.redrawCanvas();
+        }
     }
 
     redo() {
@@ -819,13 +832,19 @@ export class PaintTool {
 
         const pathToRedo = this.state.redoPaths.pop();
         this.state.paths.push(pathToRedo);
-        this.redrawCanvas();
+        if(pathToRedo.paintAction === this.PaintActions.CanvasFill) {
+            this.canvas.style.backgroundColor = pathToRedo.color;
+        }
+        else {
+            this.redrawCanvas();
+        }
     }
 
     redrawCanvas() {
         // Clear active canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+        this.ctx.globalCompositeOperation = 'source-over';
         // Copy history canvas content to active canvas
         this.ctx.drawImage(this.historyCanvas, 0, 0);
 
