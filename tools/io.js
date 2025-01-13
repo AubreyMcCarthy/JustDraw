@@ -114,11 +114,11 @@ export class IO {
         const bottomLeftHandle = this.addHandle(
             this.selection.xMin, this.selection.yMax, 'bottomLeftHandle', selectionBox
         );
-        const bottomRightHandle = this.addHandle(
-            this.selection.xMax, this.selection.yMax, 'bottomRightHandle', selectionBox
-        );
         const topRightHandle = this.addHandle(
             this.selection.xMax, this.selection.yMin, 'topRightHandle', selectionBox
+        );
+        const bottomRightHandle = this.addHandle(
+            this.selection.xMax, this.selection.yMax, 'bottomRightHandle', selectionBox
         );
     }
 
@@ -193,8 +193,8 @@ export class IO {
         this.selection.yMin.value = Math.max(this.selection.yMin.value, 0);
         this.selection.xMax.value = Math.min(this.selection.xMax.value, window.innerWidth);
         this.selection.yMax.value = Math.min(this.selection.yMax.value, window.innerHeight);
-        this.selection.xMax.value = Math.max(this.selection.xMax.value, this.selection.xMin.value + 10);
-        this.selection.yMax.value = Math.max(this.selection.yMax.value, this.selection.yMin.value + 10);
+        this.selection.xMax.value = Math.max(this.selection.xMax.value, this.selection.xMin.value + 50);
+        this.selection.yMax.value = Math.max(this.selection.yMax.value, this.selection.yMin.value + 50);
 
         this.selectionBox.style.left = `${this.selection.x()}px`;
         this.selectionBox.style.top = `${this.selection.y()}px`;
@@ -218,7 +218,7 @@ export class IO {
 
     dragAndDropControls(handle, onDrag) {
         let startX = 0, startY = 0;
-
+        let isDragging = false;
 
         // const validatePosition = () => {
         //     if(curX < paddingX) {
@@ -239,22 +239,29 @@ export class IO {
         //     x.value = curX;
         //     y.validatePosition = curY;
         // };
-
+        
+        
         const down = (x, y) => {
-            
-            startX = x
-            startY = y
-    
-            document.addEventListener('touchmove', mouseMove)
-            document.addEventListener('mouseup', mouseUp)        
+            isDragging = true;
+            startX = x;
+            startY = y;     
         }
         
         const mouseDown = (e) => {
+            if(isDragging) return;
+            isDragging = true;
             e.preventDefault();
             e.stopPropagation();
-            down(e.clientX, e.clientY)
-            document.addEventListener('mousemove', mouseMove)
-            document.addEventListener('touchend', mouseUp)
+            down(e.clientX, e.clientY);
+            document.addEventListener('mousemove', mouseMove);
+        }
+        const touchDown = (e) => {
+            if(isDragging) return;
+            isDragging = true;
+            e.preventDefault();
+            e.stopPropagation();
+            down(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            document.addEventListener('touchmove', touchMove)
         }
 
         const move = (x, y ) => {
@@ -273,17 +280,30 @@ export class IO {
         }
 
         const mouseMove = (e) => {
+            if(!isDragging) return;
             move(e.clientX, e.clientY);
             e.stopPropagation();
         }
 
+        const touchMove = (e) => {
+            if(!isDragging) return;
+            move(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            e.stopPropagation();
+        }
+
         const mouseUp = (e) => {
+            if(!isDragging) return;
+            isDragging = false;
+            document.removeEventListener('mousemove', mouseMove)
             document.removeEventListener('mousemove', mouseMove)
             e.stopPropagation();
         }
 
         handle.addEventListener('mousedown', mouseDown)
-        handle.addEventListener('touchstart', mouseDown)
+        handle.addEventListener('touchstart', touchDown)
+        handle.addEventListener('mouseup', mouseUp)
+        handle.addEventListener('touchend', mouseUp)
+        handle.addEventListener('touchcancel', mouseUp)
         handle.style.cursor = 'grab';
         // window.addEventListener("resize", () => validatePosition());
     }
