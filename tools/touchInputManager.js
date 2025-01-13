@@ -97,8 +97,8 @@ export class TouchInputManager {
         if(!this.paintTool.usePencilForce.value) return 1;
 
         if(force) {
-            // return force * 0.5 + 0.5;
-            return force;
+            return force * 0.5 + 0.5;
+            // return force;
         }
         else {
             return 1;
