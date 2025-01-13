@@ -2,18 +2,18 @@ export class IO {
     constructor(paintTool) {
         this.paintTool = paintTool;
 
-        this.fullScreen = {
-            label: "Full Screen",
-            tooltip: "full screen",
-            icon: "img/icon/eraser.svg",
-            value: false,
-            defaultValue: false,
+        this.selectArea = {
+            label: "Select Area",
+            tooltip: "select area",
+            icon: "img/icon/select-area.png",
+            value: true,
+            defaultValue: true,
         }
 
         this.fillBg = {
             label: "Fill Background",
             tooltip: "fill bg",
-            icon: "img/icon/brush_flat.svg",
+            icon: "img/icon/fill.png",
             value: true,
             defaultValue: true,
         }
@@ -49,16 +49,23 @@ export class IO {
         controls.classList.add('minimized');
         // minimize
         const hideBtn = this.addButton({
-            icon: "img/icon/pencil.svg", 
+            icon: "img/icon/save.png", 
             tooltip: "hide",
-            action: () => {
-                controls.classList.toggle('minimized');
-            },
         }, controls);
+        const hideIcon = hideBtn.querySelector('img');
+        hideBtn.addEventListener('click', () => {
+            controls.classList.toggle('minimized');
+            if(controls.classList.contains('minimized')) {
+                hideIcon.src = 'img/icon/save.png';
+            }
+            else {
+                hideIcon.src = 'img/icon/arrow-right.png';
+            }
+        });
 
         // toogle full screen
-        this.fullScreen.action = () => this.setSelectionVisability();
-        const fullScreenBtn = this.addToggleButton(this.fullScreen, controls);
+        this.selectArea.action = () => this.setSelectionVisability();
+        const selectAreaBtn = this.addToggleButton(this.selectArea, controls);
         // toggle background
         const toggleBgBtn = this.addToggleButton(this.fillBg, controls);
 
@@ -74,7 +81,7 @@ export class IO {
             });
         }
         const downloadBtn = this.addButton({
-            icon: "img/icon/pencil.svg", 
+            icon: "img/icon/save.png", 
             tooltip: "save",
             action: download,            
 
@@ -123,16 +130,26 @@ export class IO {
     }
 
     loadSVGIcon(path, el, tooltip) {
-        fetch(path)
-            .then(response => response.text())
-            .then(svg => {
-                el.innerHTML = svg;
-                if(tooltip) {
-                    el.classList.add('tooltip');
-                    el.innerHTML += `<span class="tooltiptext">${tooltip}</span>`;
-                }
-            })
-            .catch(error => console.error('Error loading the SVG: ', error));
+        const img = document.createElement('img');
+        img.src = path;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        el.appendChild(img);
+        if(tooltip) {
+            el.classList.add('tooltip');
+            el.innerHTML += `<span class="tooltiptext">${tooltip}</span>`;
+        }
+        // fetch(path)
+        //     .then(response => response.text())
+        //     .then(svg => {
+        //         el.innerHTML = svg;
+        //         if(tooltip) {
+        //             el.classList.add('tooltip');
+        //             el.innerHTML += `<span class="tooltiptext">${tooltip}</span>`;
+        //         }
+        //     })
+        //     .catch(error => console.error('Error loading the SVG: ', error));
+        return img;
     }
 
     addButton(o, controls) {
@@ -170,12 +187,12 @@ export class IO {
     }
     setSelectionVisability(){
         // console.log("setting full screen selection box vsiablity: " + this.fullScreen.value);
-        if(this.fullScreen.value) {
-            this.controls.removeChild(this.selectionBG);
-        } 
-        else {
+        if(this.selectArea.value) {
             this.controls.appendChild(this.selectionBG);
             this.setSelection();
+        } 
+        else {
+            this.controls.removeChild(this.selectionBG);
         }
     }
 
@@ -314,7 +331,7 @@ export class IO {
         let height = this.selection.height();
         let x = this.selection.x();
         let y = this.selection.y();
-        if(this.fullScreen.value) {
+        if(!this.selectArea.value) {
             width = this.paintTool.canvas.width;
             height = this.paintTool.canvas.height;
             x = 0;
