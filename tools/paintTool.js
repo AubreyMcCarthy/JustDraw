@@ -18,6 +18,13 @@ export class PaintTool {
             value: false,
             defaultValue: false,
         }
+        this.usePencilForce = {
+            label: "Use Pencil Force",
+            tooltip: "pressure",
+            icon: "img/icon/adhesive_tape.svg",
+            value: false,
+            defaultValue: false,
+        }
 
         this.lineWidth = {
             lable: "Line Width",
@@ -311,6 +318,7 @@ export class PaintTool {
 
         this.addToolButton(this.eraser, controls);
         this.addToolButton(this.polyFill, controls);
+        
         const fillBtn = this.addSelectButton({icon:"img/icon/paint.svg", tooltip: "set background"}, controls);
         fillBtn.addEventListener('click', () => this.fillColor());
 
@@ -357,6 +365,8 @@ export class PaintTool {
         this.addSlider(this.lineWidth, controls);
         controls.appendChild(radiusPreviewContainer);
         radiusPreviewContainer.appendChild(radiusPreview);
+
+        this.addToolButton(this.usePencilForce, controls);
 
         this.newCanvas();
         this.dragAndDropControls(controls, headerImg);
@@ -575,7 +585,7 @@ export class PaintTool {
         this.canvas.style.backgroundColor = this.color;
     }
 
-    startDrawing(posX, posY) {
+    startDrawing(posX, posY, force) {
         if(this.state.isDrawing) return;
 
         this.state.isDrawing = true;
@@ -584,15 +594,15 @@ export class PaintTool {
             color: this.color,
             paintAction: this.PaintActions.Draw,
         };
-        this.state.currentPath.points.push({ x: posX, y: posY });
-        this.state.currentPath.points.push({ x: posX, y: posY });
+        this.state.currentPath.points.push({ x: posX, y: posY, force: force ? force : 1 });
+        this.state.currentPath.points.push({ x: posX, y: posY, force: force ? force : 1 });
 
         // this.ctx.beginPath();
         // this.ctx.moveTo(posX, posY);
         // this.ctx.stroke();
         this.ctx.lineWidth = this.polyFill.value ? 1 : this.lineWidth.value;
         if(!this.polyFill.value)
-            this.drawPoint(posX, posY)
+            this.drawPoint(posX, posY, force ? force : 1)
     }
 
     cancelDrawing() {
@@ -601,20 +611,21 @@ export class PaintTool {
         this.redrawCanvas();
     }
 
-    drawPoint(x, y) {
+    drawPoint(x, y, force) {
         this.ctx.beginPath();
-        this.ctx.arc(x, y, this.lineWidth.value * 0.5, 0, Math.PI * 2);
+        this.ctx.arc(x, y, this.lineWidth.value * 0.5 * force, 0, Math.PI * 2);
         this.ctx.fill();
     }
 
-    draw(posX, posY) {
+    draw(posX, posY, force) {
         if (!this.state.isDrawing) return;
 
-        const newPoint = { x: posX, y: posY };
+        const newPoint = { x: posX, y: posY, force: force ? force : 1  };
         const lastPoint = this.state.currentPath.points.at(-1);
         this.state.currentPath.points.push(newPoint);
 
         this.ctx.beginPath();
+        this.ctx.lineWidth = Math.max(this.lineWidth.value * lastPoint.force, 1);
         this.ctx.moveTo(lastPoint.x, lastPoint.y);
         this.ctx.lineTo(posX, posY);
         this.ctx.stroke();
@@ -653,7 +664,7 @@ export class PaintTool {
                 paintAction: this.PaintActions.Draw,
                 blend: this.ctx.globalCompositeOperation,
                 polyFill: polyFill,
-                lineWidth: this.ctx.lineWidth,
+                lineWidth: this.polyFill.value ? 1 : this.lineWidth.value,
             });
         }
         window.onbeforeunload = function() {
@@ -893,6 +904,7 @@ export class PaintTool {
             ctx.fillStyle = path.color;
             ctx.beginPath();
             for (let i = 1; i < path.points.length; i++) {
+                ctx.lineWidth = Math.max(path.lineWidth * path.points[i].force, 1);
                 ctx.lineTo(path.points[i].x, path.points[i].y);
             }
             ctx.stroke();

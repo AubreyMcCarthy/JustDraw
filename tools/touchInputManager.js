@@ -58,7 +58,7 @@ export class TouchInputManager {
                 if (!this.isDrawing) {
                     this.pencilTouch = touch;
                     this.isDrawing = true;
-                    this.startDrawing(touch.clientX, touch.clientY);
+                    this.startDrawing(touch.clientX, touch.clientY, this.mapForce(touch.force));
                 }
             } else {
                 // Handle finger touches
@@ -86,10 +86,22 @@ export class TouchInputManager {
         if (this.isDrawing && this.pencilTouch) {
             for (const touch of event.changedTouches) {
                 if (touch.identifier === this.pencilTouch.identifier) {
-                    this.draw(touch.clientX, touch.clientY, this.activeFingerCount);
+                    this.draw(touch.clientX, touch.clientY, this.activeFingerCount, this.mapForce(touch.force));
                     break;
                 }
             }
+        }
+    }
+
+    mapForce(force) {
+        if(!this.paintTool.usePencilForce.value) return 1;
+
+        if(force) {
+            // return force * 0.5 + 0.5;
+            return force;
+        }
+        else {
+            return 1;
         }
     }
 
@@ -128,14 +140,14 @@ export class TouchInputManager {
     }
 
     // Placeholder methods to be implemented by the user
-    startDrawing(x, y) {
-        this.debugLogger.log(`Start drawing at: ${x}, ${y}`);
-        this.paintTool.startDrawing(x, y);
+    startDrawing(x, y, force) {
+        this.debugLogger.log(`Start drawing at: ${x}, ${y}, force:${force ? force : "no force applied"}`);
+        this.paintTool.startDrawing(x, y, force);
     }
 
-    draw(x, y, fingerCount) {
+    draw(x, y, fingerCount, force) {
         // this.debugLogger.log('Drawing at:', x, y, 'with', fingerCount, 'fingers');
-        this.paintTool.draw(x, y);
+        this.paintTool.draw(x, y, force);
     }
 
     stopDrawing(event) {
