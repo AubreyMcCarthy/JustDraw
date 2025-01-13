@@ -91,6 +91,12 @@ export class IO {
         const selectionBox = document.createElement('div');
         this.selectionBox = selectionBox;
         selectionBox.id = 'selectionBox';
+        this.dragAndDropControls(selectionBox, (deltaX, deltaY) => {
+            this.selection.xMin.value += deltaX;
+            this.selection.xMax.value += deltaX;
+            this.selection.yMin.value += deltaY;
+            this.selection.yMax.value += deltaY;
+        });
         selectionBG.appendChild(selectionBox);
         this.setSelectionVisability();
 
@@ -163,7 +169,7 @@ export class IO {
         });
     }
     setSelectionVisability(){
-        console.log("setting full screen selection box vsiablity: " + this.fullScreen.value);
+        // console.log("setting full screen selection box vsiablity: " + this.fullScreen.value);
         if(this.fullScreen.value) {
             this.controls.removeChild(this.selectionBG);
         } 
@@ -178,7 +184,7 @@ export class IO {
         handle.id = id;
         handle.classList.add('drag-handle');
         parent.appendChild(handle);
-        this.dragAndDropControls(x, y, handle); 
+        this.dragAndDropCorner(x, y, handle); 
         return handle;
     }
 
@@ -196,20 +202,23 @@ export class IO {
         // this.selectionBox.style.height = `${this.selection.yMax.value - this.selection.yMin.value}px`;
         this.selectionBox.style.width = `${this.selection.width()}px`;
         this.selectionBox.style.height = `${this.selection.height()}px`;
-        console.log(
-            `x: ${this.selection.x()}, width: ${this.selection.width()}.\n` +
-            `y: ${this.selection.y()}, height: ${this.selection.height()}.\n` 
-            // + `max x: ${this.selection.xMax.value}, max y: ${this.selection.yMax.value}.`
-        );
+        // console.log(
+        //     `x: ${this.selection.x()}, width: ${this.selection.width()}.\n` +
+        //     `y: ${this.selection.y()}, height: ${this.selection.height()}.\n` 
+        //     // + `max x: ${this.selection.xMax.value}, max y: ${this.selection.yMax.value}.`
+        // );
     }
 
     dragAndDropCorner(rectX, rectY, handle) {
-        
+        this.dragAndDropControls(handle, (deltaX, deltaY) => {
+            rectX.value += deltaX;
+            rectY.value += deltaY;
+        });
     }
 
-    dragAndDropControls(rectX, rectY, handle, ondrag) {
-        let newX = 0, newY = 0, startX = 0, startY = 0;
-        let curX = 0, curY;
+    dragAndDropControls(handle, onDrag) {
+        let startX = 0, startY = 0;
+
 
         // const validatePosition = () => {
         //     if(curX < paddingX) {
@@ -242,14 +251,19 @@ export class IO {
         
         const mouseDown = (e) => {
             e.preventDefault();
+            e.stopPropagation();
             down(e.clientX, e.clientY)
             document.addEventListener('mousemove', mouseMove)
             document.addEventListener('touchend', mouseUp)
         }
 
         const move = (x, y ) => {
-            rectX.value += x - startX;
-            rectY.value += y - startY;
+            // rectX.value += x - startX;
+            // rectY.value += y - startY;
+            onDrag(
+                x - startX,
+                y - startY
+            );
         
             startX = x;
             startY = y;
@@ -260,10 +274,12 @@ export class IO {
 
         const mouseMove = (e) => {
             move(e.clientX, e.clientY);
+            e.stopPropagation();
         }
 
         const mouseUp = (e) => {
             document.removeEventListener('mousemove', mouseMove)
+            e.stopPropagation();
         }
 
         handle.addEventListener('mousedown', mouseDown)

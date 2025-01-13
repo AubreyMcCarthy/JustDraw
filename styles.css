@@ -422,7 +422,7 @@ input[type="range"]::-webkit-slider-thumb {
 #selectionBox {
   position: fixed;
   /* background-color: rgba(0,0,0.5,0.5); */
-  box-shadow: 0 0 0 99999px rgba(0, 0, 0, .2);
+  box-shadow: 0 0 0 99999px rgba(0, 0, 0, .33);
   border: 2px dashed #bfbeb889;
   border-radius: 5px;
 }
@@ -433,7 +433,7 @@ input[type="range"]::-webkit-slider-thumb {
   position: absolute;
   /* background-color: #c83b8b8e; */
   border: 15px solid #1d1d1d;
-  border-radius: 5px;
+  border-radius: 15px;
 }
 #topLeftHandle {
   top: -20px;
