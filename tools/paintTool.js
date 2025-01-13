@@ -644,7 +644,9 @@ export class PaintTool {
     stopDrawing(e) {
         if (!this.state.isDrawing) return;
 
-        const polyFill = this.polyFill.value || e.shiftKey;
+        const polyFill = 
+            (this.polyFill.value || e.altKey);// && 
+            // this.state.currentPath.points.length > 4;
 
         if(polyFill) {
             this.ctx.beginPath();
@@ -657,7 +659,33 @@ export class PaintTool {
         }
 
         this.state.isDrawing = false;
-        if (this.state.currentPath.points.length > 0) {
+        window.onbeforeunload = function() {
+            return true;
+        };
+        this.debugLogger.log("stopped drawing");
+
+        if (
+            e.shiftKey &&
+            this.state.currentPath.points.length < 4 && 
+            this.state.paths.length > 0 
+        ) {
+            console.log("drawing straight line");
+            const straightPath = {
+                points: [this.state.paths.at(-1).points.at(-1), this.state.paths.at(-1).points.at(-1), this.state.currentPath.points[0], this.state.currentPath.points[0]],
+                color: this.color,
+                paintAction: this.PaintActions.Draw,
+            }
+            this.drawCompletePath(straightPath, this.ctx);
+            this.addToUndoStack({
+                points: [...straightPath.points],
+                color: this.state.currentPath.color,
+                paintAction: this.PaintActions.Draw,
+                blend: this.ctx.globalCompositeOperation,
+                polyFill: polyFill,
+                lineWidth: this.polyFill.value ? 1 : this.lineWidth.value,
+            });
+        }
+        else if (this.state.currentPath.points.length > 0) {
             this.addToUndoStack({
                 points: [...this.state.currentPath.points],
                 color: this.state.currentPath.color,
@@ -667,10 +695,9 @@ export class PaintTool {
                 lineWidth: this.polyFill.value ? 1 : this.lineWidth.value,
             });
         }
-        window.onbeforeunload = function() {
-            return true;
-        };
-        this.debugLogger.log("stopped drawing");
+
+        
+
     }
 
 
