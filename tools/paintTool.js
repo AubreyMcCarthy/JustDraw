@@ -280,12 +280,18 @@ export class PaintTool {
             controls.classList.toggle('minimized');
         });
 
-        const headerSpan = document.createElement('span');
-        headerSpan.style.width = "80px";
-        headerSpan.style.alignContent = "center";
-        headerSpan.style.color = 'rgb(169, 163, 142)';
-        headerSpan.innerText = "just draw";
-        controls.appendChild(headerSpan);
+        // const headerSpan = document.createElement('span');
+        // headerSpan.style.width = "80px";
+        // headerSpan.style.alignContent = "center";
+        // headerSpan.style.color = 'rgb(169, 163, 142)';
+        // headerSpan.innerText = "just draw";
+        // controls.appendChild(headerSpan);
+        const headerImg = document.createElement('img');
+        headerImg.src = "img/just-draw.png";
+        headerImg.style.width = "80px";
+        headerImg.style.height = "20px";
+        headerImg.style.marginTop = '8px';
+        controls.appendChild(headerImg);
 
         const newDrawingButton = this.addSelectButton({icon: "img/icon/easel.svg", tooltip: "new"}, controls);
         newDrawingButton.addEventListener('click', () => location.reload());
@@ -353,17 +359,38 @@ export class PaintTool {
         radiusPreviewContainer.appendChild(radiusPreview);
 
         this.newCanvas();
-        this.dragAndDropControls(controls, headerSpan);
+        this.dragAndDropControls(controls, headerImg);
         // this.resize();
     }
 
     dragAndDropControls(controls, handle) {
         let newX = 0, newY = 0, startX = 0, startY = 0;
+        let curX = 0, curY;
 
         handle.addEventListener('mousedown', mouseDown)
         handle.style.cursor = 'grab';
 
+        const validatePosition = () => {
+            if(curX < 10) {
+                curX = 10;
+            }
+            else if(curX > window.innerWidth - controls.offsetWidth - 10) {
+                curX = window.innerWidth - controls.offsetWidth - 10;
+            }
+            if(curY < 10) {
+                curY = 10;
+            }
+            else if(curY > window.innerHeight - controls.offsetHeight - 10) {
+                curY = window.innerHeight - controls.offsetHeight - 10;
+            }
+
+            controls.style.top = curY + 'px'
+            controls.style.left = curX + 'px'
+        };
+
         function mouseDown(e){
+            e.preventDefault();
+
             startX = e.clientX
             startY = e.clientY
 
@@ -378,13 +405,16 @@ export class PaintTool {
             startX = e.clientX
             startY = e.clientY
 
-            controls.style.top = (controls.offsetTop - newY) + 'px'
-            controls.style.left = (controls.offsetLeft - newX) + 'px'
+            curX = controls.offsetLeft - newX;
+            curY = controls.offsetTop - newY;
+
+            validatePosition();
         }
 
         function mouseUp(e){
             document.removeEventListener('mousemove', mouseMove)
         }
+        window.addEventListener("resize", () => validatePosition());
     }
 
     // function to setup a new canvas for drawing
