@@ -682,7 +682,7 @@ export class PaintTool {
                 paintAction: this.PaintActions.Draw,
                 blend: this.ctx.globalCompositeOperation,
                 polyFill: polyFill,
-                lineWidth: this.polyFill.value ? 1 : this.lineWidth.value,
+                lineWidth: this.lineWidth.value,
             });
         }
         else if (this.state.currentPath.points.length > 0) {
@@ -692,7 +692,7 @@ export class PaintTool {
                 paintAction: this.PaintActions.Draw,
                 blend: this.ctx.globalCompositeOperation,
                 polyFill: polyFill,
-                lineWidth: this.polyFill.value ? 1 : this.lineWidth.value,
+                lineWidth: this.lineWidth.value,
             });
         }
 
