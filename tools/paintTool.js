@@ -325,7 +325,7 @@ export class PaintTool {
         const blendSelect = this.addSelect(this.blendModes, controls);
         blendSelect.addEventListener("change", (event) => {
             this.blendMode = event.target.value;
-            this.ctx.globalCompositeOperation = this.blendMode;
+            this.selectColor();
         });
         blendSelect.style.width = "160px";
         blendSelect.style.height = "36px";
@@ -938,17 +938,12 @@ export class PaintTool {
             if(path.polyFill)
                 ctx.fill()
         }
-        else if(path.paintAction === this.PaintActions.CanvasFill) {
-            ctx.beginPath();
-            ctx.fillStyle = path.color;
-            ctx.rect(0, 0, this.canvas.width, this.canvas.height);
-            ctx.fill();
-        }
     }
 
     // Remove oldest path and draw it on the history canvas
     bakeOldestPath() {
         const path = this.state.paths.shift();
+        if(path.paintAction === this.PaintActions.CanvasFill) return;
         const ctx = this.historyCtx;
         this.drawCompletePath(path, ctx);        
     }
