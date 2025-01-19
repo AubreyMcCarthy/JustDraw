@@ -16,23 +16,23 @@ export class PaintTool {
             label: "Poly Fill",
             tooltip: "fill area",
             icon: "img/icon/poly-fill.png",
-            altIcon: "img/icon/poly-fill.png",
+            altIcon: "img/icon/line.png",
             value: false,
             defaultValue: false,
         }
         this.usePencilForce = {
             label: "Use Pencil Pressure",
             tooltip: "pressure",
-            icon: "img/icon/pressure.png",
-            altIcon: "img/icon/poly-fill.png",
+            icon: "img/icon/line-pressure.png",
+            altIcon: "img/icon/line-consistent.png",
             value: false,
             defaultValue: false,
         }
         this.usePencilInput = {
             label: "Use Pencil",
             tooltip: "touch input",
-            icon: "img/icon/pressure.png",
-            altIcon: "img/icon/poly-fill.png",
+            icon: "img/icon/stylus.png",
+            altIcon: "img/icon/finger.png",
             value: false,
             defaultValue: false,
         }
