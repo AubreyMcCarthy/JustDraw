@@ -298,9 +298,9 @@ export class PaintTool {
         controls.innerHTML = "";
 
         const hideBtn = this.addSelectButton({icon: "img/icon/arrow-up.png", tooltip: "hide"}, controls);
-        hideBtn.addEventListener('click', () => {
-            controls.classList.toggle('minimized');
-        });
+        const minimize = () => controls.classList.toggle('minimized');
+        hideBtn.addEventListener('click', minimize);
+        hideBtn.addEventListener('touchstart', minimize);
 
         // const headerSpan = document.createElement('span');
         // headerSpan.style.width = "80px";
