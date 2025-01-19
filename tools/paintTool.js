@@ -6,7 +6,8 @@ export class PaintTool {
         this.eraser = {
             label: "Eraser",
             tooltip: "eraser",
-            icon: "img/icon/eraser.svg",
+            icon: "img/icon/eraser.png",
+            altIcon: "img/icon/pencil.png",
             value: false,
             defaultValue: false,
             color: "#000"
@@ -14,14 +15,15 @@ export class PaintTool {
         this.polyFill = {
             label: "Poly Fill",
             tooltip: "fill area",
-            icon: "img/icon/brush_flat.svg",
+            icon: "img/icon/poly-fill.png",
+            altIcon: "img/icon/poly-fill.png",
             value: false,
             defaultValue: false,
         }
         this.usePencilForce = {
             label: "Use Pencil Force",
             tooltip: "pressure",
-            icon: "img/icon/adhesive_tape.svg",
+            icon: "img/icon/pressure.png",
             value: false,
             defaultValue: false,
         }
@@ -154,16 +156,16 @@ export class PaintTool {
     }
 
     loadSVGIcon(path, el, tooltip) {
-        fetch(path)
-            .then(response => response.text())
-            .then(svg => {
-                el.innerHTML = svg;
-                if(tooltip) {
-                    el.classList.add('tooltip');
-                    el.innerHTML += `<span class="tooltiptext">${tooltip}</span>`;
-                }
-            })
-            .catch(error => console.error('Error loading the SVG: ', error));
+        const img = document.createElement('img');
+        img.src = path;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        el.appendChild(img);
+        if(tooltip) {
+            el.classList.add('tooltip');
+            el.innerHTML += `<span class="tooltiptext">${tooltip}</span>`;
+        }
+        return img;
     }
 
     addSelectButton(o, controls) {
@@ -205,10 +207,14 @@ export class PaintTool {
 
         btn.addEventListener('click', () => {
             o.value = !o.value;
-            if(o.value)
+            if(o.value) {
                 btn.classList.add("btn-enabled");
-            else
+                btn.querySelector('img').src = o.altIcon;
+            }
+            else {
                 btn.classList.remove("btn-enabled");
+                btn.querySelector('img').src = o.icon
+            }
 
             this.selectColor();
         });
@@ -282,7 +288,7 @@ export class PaintTool {
         const controls = document.getElementById('controls-tool-specific');
         controls.innerHTML = "";
 
-        const hideBtn = this.addSelectButton({icon: "img/icon/pencil.svg", tooltip: "hide"}, controls);
+        const hideBtn = this.addSelectButton({icon: "img/icon/arrow-up.png", tooltip: "hide"}, controls);
         hideBtn.addEventListener('click', () => {
             controls.classList.toggle('minimized');
         });
@@ -300,14 +306,14 @@ export class PaintTool {
         headerImg.style.marginTop = '8px';
         controls.appendChild(headerImg);
 
-        const newDrawingButton = this.addSelectButton({icon: "img/icon/easel.svg", tooltip: "new"}, controls);
+        const newDrawingButton = this.addSelectButton({icon: "img/icon/canvas.png", tooltip: "new"}, controls);
         newDrawingButton.addEventListener('click', () => location.reload());
 
         // Add undo/redo buttons
-        const undoButton = this.addSelectButton({icon: "img/icon/undo.svg", tooltip: "undo"}, controls);
+        const undoButton = this.addSelectButton({icon: "img/icon/undo.png", tooltip: "undo"}, controls);
         undoButton.addEventListener('click', () => this.undo());
 
-        const redoButton = this.addSelectButton({icon: "img/icon/redo.svg", tooltip: "redo"}, controls);
+        const redoButton = this.addSelectButton({icon: "img/icon/redo.png", tooltip: "redo"}, controls);
         redoButton.addEventListener('click', () => this.redo());
 
 
@@ -319,7 +325,7 @@ export class PaintTool {
         this.addToolButton(this.eraser, controls);
         this.addToolButton(this.polyFill, controls);
         
-        const fillBtn = this.addSelectButton({icon:"img/icon/paint.svg", tooltip: "set background"}, controls);
+        const fillBtn = this.addSelectButton({icon:"img/icon/fill-canvas.png", tooltip: "set background"}, controls);
         fillBtn.addEventListener('click', () => this.fillColor());
 
         const blendSelect = this.addSelect(this.blendModes, controls);

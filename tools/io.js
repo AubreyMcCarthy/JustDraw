@@ -321,7 +321,6 @@ export class IO {
         handle.addEventListener('mouseup', mouseUp)
         handle.addEventListener('touchend', mouseUp)
         handle.addEventListener('touchcancel', mouseUp)
-        handle.style.cursor = 'grab';
         // window.addEventListener("resize", () => validatePosition());
     }
 

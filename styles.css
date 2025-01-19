@@ -6,6 +6,7 @@ body {
   background-color: #212121;
   touch-action: none;
   font-family: system-ui, -apple-system, sans-serif;
+  font-size: 26px;
   user-select: none;
 }
 
@@ -123,7 +124,7 @@ input[type="file"] {
   display: none;
 }
 
-button, .custom-file-upload {
+button, .custom-file-upload, .icon {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -425,6 +426,7 @@ input[type="range"]::-webkit-slider-thumb {
   box-shadow: 0 0 0 99999px rgba(0, 0, 0, .33);
   border: 2px dashed #bfbeb889;
   border-radius: 5px;
+  cursor: move;
 }
 
 .drag-handle {
@@ -440,25 +442,32 @@ input[type="range"]::-webkit-slider-thumb {
   left: -20px;
   border-bottom: none;
   border-right: none;
+  cursor: nwse-resize;
 }
 #bottomLeftHandle {
   bottom: -20px;
   left: -20px;
   border-top: none;
   border-right: none;
+  cursor: nesw-resize;
 }
 #topRightHandle {
   top: -20px;
   right: -20px;
   border-bottom: none;
   border-left: none;
+  cursor: nesw-resize;
 }
 #bottomRightHandle {
   bottom: -20px;
   right: -20px;
   border-top: none;
   border-left: none;
+  cursor: nwse-resize;
 }
-
-
+/* 
+.icon {
+  width: 32px;
+  height: 32px;
+} */
 
