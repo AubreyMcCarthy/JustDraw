@@ -21,9 +21,18 @@ export class PaintTool {
             defaultValue: false,
         }
         this.usePencilForce = {
-            label: "Use Pencil Force",
+            label: "Use Pencil Pressure",
             tooltip: "pressure",
             icon: "img/icon/pressure.png",
+            altIcon: "img/icon/poly-fill.png",
+            value: false,
+            defaultValue: false,
+        }
+        this.usePencilInput = {
+            label: "Use Pencil",
+            tooltip: "touch input",
+            icon: "img/icon/pressure.png",
+            altIcon: "img/icon/poly-fill.png",
             value: false,
             defaultValue: false,
         }
@@ -372,11 +381,17 @@ export class PaintTool {
         controls.appendChild(radiusPreviewContainer);
         radiusPreviewContainer.appendChild(radiusPreview);
 
-        this.addToolButton(this.usePencilForce, controls);
 
         this.newCanvas();
         this.dragAndDropControls(controls, headerImg);
         // this.resize();
+        this.controls = controls;
+    }
+
+    showTouchControls(_usePencilInput, inputChanged) {
+        this.addToolButton(this.usePencilInput, this.controls);
+        this.usePencilInput.btn.addEventListener('click', () => inputChanged(this.usePencilInput.value));
+        this.addToolButton(this.usePencilForce, this.controls);
     }
 
     dragAndDropControls(controls, handle) {
