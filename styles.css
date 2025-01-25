@@ -201,7 +201,7 @@ button:disabled {
   /* transition: opacity 1s, visibility 1s; */
 }
 
-.hasHover .tooltip .tooltiptext::after {
+.tooltip .tooltiptext::after {
   content: "";
   position: absolute;
   bottom: 100%;
@@ -212,7 +212,7 @@ button:disabled {
   border-color: transparent transparent rgb(60, 62, 65) transparent;
 }
 
-.hasHover .tooltip:hover .tooltiptext {
+.tooltip:active .tooltiptext, .hasHover .tooltip:hover .tooltiptext {
   visibility: visible;
   opacity: 1;
 }

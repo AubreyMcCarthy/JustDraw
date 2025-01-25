@@ -69,6 +69,41 @@ export class IO {
         // toggle background
         const toggleBgBtn = this.addToggleButton(this.fillBg, controls);
 
+        // download
+        // save as
+        const saveAsBtn = this.addButton({
+            icon: "img/icon/save.png", 
+            tooltip: "save",
+            action: this.saveProject.bind(this),            
+
+        }, controls);
+        // const loadBtn = this.addButton({
+        //     icon: "img/icon/save.png", 
+        //     tooltip: "load",
+        //     action: this.loadProject.bind(this),            
+
+        // }, controls);
+
+        // <label for="fileInput" class="custom-file-upload tooltip">📂<span class="tooltiptext">Open Image</span></label>
+        const loadBtnLabel = document.createElement('label');
+        loadBtnLabel.htmlFor = 'loadBtn';
+        loadBtnLabel.className = 'custom-file-upload tooltip';
+        this.loadSVGIcon('img/icon/open.png', loadBtnLabel, 'Open');
+        controls.appendChild(loadBtnLabel);
+
+        const loadProject = this.loadProject.bind(this);
+        const loadBtn = document.createElement('input');
+        loadBtn.type = 'file';
+        loadBtn.id = 'loadBtn';
+        loadBtn.addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                await loadProject(e.target.files[0]);
+            }
+        });
+        controls.appendChild(loadBtn);
+
+        
+
         // export buttons
         const download = () => {
             this.drawSelectionCanvas((blob) => {
@@ -81,13 +116,12 @@ export class IO {
             });
         }
         const downloadBtn = this.addButton({
-            icon: "img/icon/save.png", 
-            tooltip: "save",
+            icon: "img/icon/export.png", 
+            tooltip: "export",
             action: download,            
 
         }, controls);
-        // download
-        // save as
+
         // copy
         // share
 
@@ -371,4 +405,54 @@ export class IO {
         // this.baseCanvas.style.display = 'none';
 
     }
+
+    async saveProject() {
+        const zip = new JSZip();
+        
+        // Add project metadata
+        zip.file("metadata.json", JSON.stringify({
+            version: "0.1",
+            backgroundColor: this.paintTool.canvas.style.backgroundColor
+        }));
+        
+        // Add main canvas
+        zip.file("canvas.png", this.paintTool.canvas.toDataURL().split(',')[1], {base64: true});
+        
+        // // Add thumbnail
+        // const thumbnail = generateThumbnail(canvas, 256, 256);
+        // zip.file("thumbnail.png", thumbnail.split(',')[1], {base64: true});
+        
+        // Generate zip file
+        const content = await zip.generateAsync({type: "blob"});
+        
+        // Trigger download
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "drawing-project.webproj";
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    async loadProject(file) {
+        const zip = await JSZip.loadAsync(file);
+        
+        // Read metadata
+        const metadata = JSON.parse(await zip.file("metadata.json").async("string"));
+        console.log(metadata.file);
+        console.log(metadata.backgroundColor);
+        
+        // Load canvas image
+        const canvasBlob = await zip.file("canvas.png").async("blob");
+        const canvasUrl = URL.createObjectURL(canvasBlob);
+        
+        const img = new Image();
+        img.onload = () => {
+            this.paintTool.loadCanvas(img, metadata.backgroundColor);
+            
+            URL.revokeObjectURL(canvasUrl);
+        };
+        img.src = canvasUrl;
+    }
+    
 }

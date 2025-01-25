@@ -383,6 +383,8 @@ export class PaintTool {
 
 
         this.newCanvas();
+        this.drawMouse();
+        this.keyboardShortcuts();
         this.dragAndDropControls(controls, headerImg);
         // this.resize();
         this.controls = controls;
@@ -448,30 +450,39 @@ export class PaintTool {
         window.addEventListener("resize", () => validatePosition());
     }
 
-    // function to setup a new canvas for drawing
-    newCanvas() {
+    resetState() {
         const state = {
             isDrawing: false,
             paths: [],
             redoPaths: [],
             maxUndoSteps: 20,
             currentPath: [],
+            get previousPath() { paths.at(-1); },
         };
         this.state = state;
+    }
 
+    // function to setup a new canvas for drawing
+    newCanvas() {
+        const randomBgColor = Math.floor(Math.random() * 6);
+        this.clearCanvas(window.innerWidth, window.innerHeight, this.colors.at(randomBgColor).color);
+    }
 
-        const canvas = document.createElement('canvas');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+    clearCanvas(width, height, backgroundColor, img) {
+        this.resetState();
+
+        const canvas = this.canvas ? this.canvas : document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
         canvas.id = 'drawing-canvas';
         this.canvas = canvas;
         document.body.appendChild(canvas);
 
         // Canvas setup
-        const historyCanvas = document.createElement('canvas');
+        const historyCanvas = this.historyCanvas ? this.historyCanvas : document.createElement('canvas');
         this.historyCanvas = historyCanvas;
-        historyCanvas.width = canvas.width;
-        historyCanvas.height = canvas.height;
+        historyCanvas.width = width;
+        historyCanvas.height = height;
 
 
         const ctx = canvas.getContext("2d");
@@ -486,30 +497,14 @@ export class PaintTool {
             ctx.lineJoin = 'round';
         });
 
-        // copy existing contents to paint tool's canvas
-        // baseCanvas.toBlob(async (blob) => {
-        //     const img = new Image();
-        //     img.onload = function () {
-        //         ctx.drawImage(img, 0, 0);
-        //         historyCtx.drawImage(img, 0, 0);
-        //     };
-        //     img.src = URL.createObjectURL(blob);
-        // }, 'image/png');
-        // this.baseCanvas.style.display = 'none';
+        if(img) {
+            ctx.drawImage(img, 0, 0);
+            historyCtx.drawImage(img, 0, 0);
+        }
 
-        // setup to trigger drawing on mouse or touch
-        // this.drawTouch();
-        // this.drawPointer();
-        this.drawMouse();
-        this.keyboardShortcuts();
-
-        const randomBgColor = Math.floor(Math.random() * 6);
-        this.canvas.style.backgroundColor = this.colors.at(randomBgColor).color;
-        // this.color = this.colors.at(randomBgColor).color;
-        // this.fillColor();
+        this.canvas.style.backgroundColor = backgroundColor;
         let randomPaintColor = Math.floor(Math.random() * 6);
-        // console.log(`bg: ${randomBgColor}, paint: ${randomPaintColor}`); 
-        if(randomBgColor == randomPaintColor) {
+        if(backgroundColor == this.colors.at(randomPaintColor).color) {
             console.log("same color");
             randomPaintColor += 1;
             if(randomPaintColor >= 6)
@@ -517,6 +512,10 @@ export class PaintTool {
         }
         this.color = this.colors.at(randomPaintColor).color;
         this.selectColor();
+    }
+
+    loadCanvas(img, backgroundColor) {
+        this.clearCanvas(img.width, img.height, backgroundColor, img);
     }
 
     // resize() {
@@ -598,6 +597,12 @@ export class PaintTool {
         //     paintAction: this.PaintActions.CanvasFill,
         //     blend: this.ctx.globalCompositeOperation,
         // });
+        const previousAction = this.state.previousPath();
+        if(
+            previousAction.paintAction === this.PaintActions.CanvasFill
+            && previousAction.color === this.color
+        ) return;
+
         this.addToUndoStack({
             color: this.color,
             colorBefore: this.canvas.style.backgroundColor,
