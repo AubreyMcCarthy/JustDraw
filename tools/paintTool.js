@@ -457,7 +457,7 @@ export class PaintTool {
             redoPaths: [],
             maxUndoSteps: 20,
             currentPath: [],
-            get previousPath() { paths.at(-1); },
+            get previousPath() { return this.paths.at(-1); },
         };
         this.state = state;
     }
@@ -587,22 +587,15 @@ export class PaintTool {
     }
 
     fillColor() {
-        // this.ctx.beginPath();
-        // this.ctx.fillStyle = this.color;
-        // this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
-        // this.ctx.fill();
-
-        // this.addToUndoStack({
-        //     color: this.color,
-        //     paintAction: this.PaintActions.CanvasFill,
-        //     blend: this.ctx.globalCompositeOperation,
-        // });
-        const previousAction = this.state.previousPath();
+        const previousAction = this.state.previousPath;
         if(
+            previousAction != null && 
             previousAction.paintAction === this.PaintActions.CanvasFill
             && previousAction.color === this.color
-        ) return;
-
+        ) {
+            return;
+        } 
+        
         this.addToUndoStack({
             color: this.color,
             colorBefore: this.canvas.style.backgroundColor,
