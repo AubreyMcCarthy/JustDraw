@@ -565,6 +565,7 @@ export class PaintTool {
             if (this.currentColor)
             {
                 this.currentColor.style.backgroundColor = this.eraser.color;
+                this.currentColor.innerHTML = "";
                 this.loadSVGIcon(this.eraser.icon, this.currentColor);
                 // this.currentColor.innerHTML = this.eraser.btn.innerHTML;
             }
