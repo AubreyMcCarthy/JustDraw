@@ -1,19 +1,12 @@
-import { IO } from './tools/io.js';
-import { PaintTool } from './tools/paintTool.js';
-import { DebugLogger } from './tools/debugLogger.js';
-import { TouchInputManager } from './tools/touchInputManager.js';
+import { App } from "./tools/app.js";
 
 function log(text) {
     console.log(`Error: ${text}`);
     alert(`Error: ${text}`);
 }
 
-const debugLogger = new DebugLogger(true, document.getElementById('aboutTitle'));
-const paintTool = new PaintTool(debugLogger);
+const app = new App();
 
-paintTool.init();
-const touchInputManager = new TouchInputManager(paintTool, debugLogger);
-const io = new IO(paintTool);
 
 const aboutBtn = document.getElementById('aboutBtn');
 const about = document.getElementById('about');
@@ -23,7 +16,6 @@ aboutContainer.addEventListener('click', (e) => {
     if(e.target == aboutContainer)
         aboutContainer.classList.toggle('hide')
 });
-
 
 // disable hover effects when touch input happens
 function watchForHover() {

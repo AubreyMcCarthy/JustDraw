@@ -1,6 +1,7 @@
 export class IO {
-    constructor(paintTool) {
-        this.paintTool = paintTool;
+    constructor(app) {
+        this.app = app;
+        this.paintTool = app.paintTool;
 
         this.selectArea = {
             label: "Select Area",

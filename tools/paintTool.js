@@ -1,6 +1,9 @@
+import { AppCanvas } from "./canvasManager.js";
+
 export class PaintTool {
-    constructor(debugLogger) {
-        this.debugLogger = debugLogger;
+    constructor(app) {
+        this.app = app;
+        this.console = app.console;
         this.color = '#990099';
         
         this.eraser = {
@@ -320,10 +323,10 @@ export class PaintTool {
 
         // Add undo/redo buttons
         const undoButton = this.addSelectButton({icon: "img/icon/undo.png", tooltip: "undo"}, controls);
-        undoButton.addEventListener('click', () => this.undo());
+        undoButton.addEventListener('click', () => this.app.history.undo());
 
         const redoButton = this.addSelectButton({icon: "img/icon/redo.png", tooltip: "redo"}, controls);
-        redoButton.addEventListener('click', () => this.redo());
+        redoButton.addEventListener('click', () => this.app.history.redo());
 
 
         for (let i = 0; i < this.colors.length; i++) {
@@ -453,70 +456,86 @@ export class PaintTool {
     resetState() {
         const state = {
             isDrawing: false,
+            currentPath: {},
             paths: [],
             redoPaths: [],
-            maxUndoSteps: 20,
-            currentPath: [],
-            get previousPath() { return this.paths.at(-1); },
+            boudingBox: {}
         };
         this.state = state;
     }
 
     // function to setup a new canvas for drawing
     newCanvas() {
-        const randomBgColor = Math.floor(Math.random() * 6);
-        this.clearCanvas(window.innerWidth, window.innerHeight, this.colors.at(randomBgColor).color);
-    }
+        this.app.canvasManager.viewCanvas.canvas.id = 'drawing-canvas';
 
-    clearCanvas(width, height, backgroundColor, img) {
         this.resetState();
+        this.app.canvasManager.viewCanvas.canvas.style.backgroundColor = this.colors.at(0).color;
 
-        const canvas = this.canvas ? this.canvas : document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        canvas.id = 'drawing-canvas';
-        this.canvas = canvas;
-        document.body.appendChild(canvas);
+        this.color = this.colors.at(1).color;
+        this.selectColor();
 
-        // Canvas setup
-        const historyCanvas = this.historyCanvas ? this.historyCanvas : document.createElement('canvas');
-        this.historyCanvas = historyCanvas;
-        historyCanvas.width = width;
-        historyCanvas.height = height;
-
-
-        const ctx = canvas.getContext("2d");
-        this.ctx = ctx;
-        const historyCtx = historyCanvas.getContext('2d');
-        this.historyCtx = historyCtx;
-
-        [this.ctx, this.historyCtx].forEach(ctx => {
+        [this.app.canvasManager.viewCanvas.context, this.app.canvasManager.historyCanvas.context].forEach(ctx => {
             ctx.strokeStyle = this.color;
             ctx.lineWidth = this.lineWidth.value;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
         });
 
-        if(img) {
-            ctx.drawImage(img, 0, 0);
-            historyCtx.drawImage(img, 0, 0);
-        }
+        this.app.canvasManager.renderCallbacks.push(this.redrawCanvas.bind(this));
 
-        this.canvas.style.backgroundColor = backgroundColor;
-        let randomPaintColor = Math.floor(Math.random() * 6);
-        if(backgroundColor == this.colors.at(randomPaintColor).color) {
-            console.log("same color");
-            randomPaintColor += 1;
-            if(randomPaintColor >= 6)
-                randomPaintColor = 0;   
-        }
-        this.color = this.colors.at(randomPaintColor).color;
-        this.selectColor();
+        // const randomBgColor = Math.floor(Math.random() * 6);
+        // this.clearCanvas(window.innerWidth, window.innerHeight, this.colors.at(randomBgColor).color);
     }
 
-    loadCanvas(img, backgroundColor) {
-        this.clearCanvas(img.width, img.height, backgroundColor, img);
-    }
+    // clearCanvas(width, height, backgroundColor, img) {
+    //     this.resetState();
+
+    //     const canvas = this.canvas ? this.canvas : document.createElement('canvas');
+    //     canvas.width = width;
+    //     canvas.height = height;
+    //     canvas.id = 'drawing-canvas';
+    //     this.canvas = canvas;
+    //     document.body.appendChild(canvas);
+
+    //     // Canvas setup
+    //     const historyCanvas = this.historyCanvas ? this.historyCanvas : document.createElement('canvas');
+    //     this.historyCanvas = historyCanvas;
+    //     historyCanvas.width = width;
+    //     historyCanvas.height = height;
+
+
+    //     const ctx = canvas.getContext("2d");
+    //     this.ctx = ctx;
+    //     const historyCtx = historyCanvas.getContext('2d');
+    //     this.historyCtx = historyCtx;
+
+    //     [this.ctx, this.historyCtx].forEach(ctx => {
+    //         ctx.strokeStyle = this.color;
+    //         ctx.lineWidth = this.lineWidth.value;
+    //         ctx.lineCap = 'round';
+    //         ctx.lineJoin = 'round';
+    //     });
+
+    //     if(img) {
+    //         ctx.drawImage(img, 0, 0);
+    //         historyCtx.drawImage(img, 0, 0);
+    //     }
+
+    //     this.canvas.style.backgroundColor = backgroundColor;
+    //     let randomPaintColor = Math.floor(Math.random() * 6);
+    //     if(backgroundColor == this.colors.at(randomPaintColor).color) {
+    //         console.log("same color");
+    //         randomPaintColor += 1;
+    //         if(randomPaintColor >= 6)
+    //             randomPaintColor = 0;   
+    //     }
+    //     this.color = this.colors.at(randomPaintColor).color;
+    //     this.selectColor();
+    // }
+
+    // loadCanvas(img, backgroundColor) {
+    //     this.clearCanvas(img.width, img.height, backgroundColor, img);
+    // }
 
     // resize() {
     //     window.addEventListener("resize", (event) => {
@@ -545,7 +564,7 @@ export class PaintTool {
 
     apply() {
         // new image with contents
-        this.canvas.toBlob(async (blob) => {
+        this.app.canvasManager.viewCanvas.canvas.toBlob(async (blob) => {
             this.io.newImage(URL.createObjectURL(blob));
             this.close();
         }, 'image/png');
@@ -561,7 +580,7 @@ export class PaintTool {
     selectColor() {
         if(this.eraser.value)
         {
-            this.ctx.globalCompositeOperation = 'destination-out';
+            this.app.canvasManager.viewCanvas.context.globalCompositeOperation = 'destination-out';
             if (this.currentColor)
             {
                 this.currentColor.style.backgroundColor = this.eraser.color;
@@ -572,7 +591,7 @@ export class PaintTool {
         }
         else
         {
-            this.ctx.globalCompositeOperation = this.blendMode;
+            this.app.canvasManager.viewCanvas.context.globalCompositeOperation = this.blendMode;
             if (this.currentColor)
             {
                 this.currentColor.style.backgroundColor = this.color;
@@ -582,27 +601,34 @@ export class PaintTool {
 
         this.colorSelect.value = this.color;
         
-        this.ctx.fillStyle = this.color;
-        this.ctx.strokeStyle = this.color;
-        this.ctx.beginPath();
+        this.app.canvasManager.viewCanvas.context.fillStyle = this.color;
+        this.app.canvasManager.viewCanvas.context.strokeStyle = this.color;
+        this.app.canvasManager.viewCanvas.context.beginPath();
     }
 
     fillColor() {
-        const previousAction = this.state.previousPath;
-        if(
-            previousAction != null && 
-            previousAction.paintAction === this.PaintActions.CanvasFill
-            && previousAction.color === this.color
-        ) {
-            return;
-        } 
+        // const previousAction = this.app.state.previousPath();
+        // if(
+        //     previousAction != null && 
+        //     previousAction.paintAction === this.PaintActions.CanvasFill
+        //     && previousAction.color === this.color
+        // ) {
+        //     return;
+        // } 
+        const colorTo = this.color;
+        const currentColor = this.app.canvasManager.viewCanvas.canvas.style.backgroundColor;
+
+        const action = () => {
+            this.app.canvasManager.viewCanvas.canvas.style.backgroundColor = colorTo;
+        }
+        const undoAction = () => {
+            this.app.canvasManager.viewCanvas.canvas.style.backgroundColor = currentColor;
+        }
+
+        this.app.history.addAction(action, undoAction);
+
+        action();
         
-        this.addToUndoStack({
-            color: this.color,
-            colorBefore: this.canvas.style.backgroundColor,
-            paintAction: this.PaintActions.CanvasFill,    
-        });
-        this.canvas.style.backgroundColor = this.color;
     }
 
     startDrawing(posX, posY, force) {
@@ -617,12 +643,20 @@ export class PaintTool {
         this.state.currentPath.points.push({ x: posX, y: posY, force: force ? force : 1 });
         this.state.currentPath.points.push({ x: posX, y: posY, force: force ? force : 1 });
 
+        this.state.currentPath.boundingBox = {
+            minX: posX,
+            minY: posY,
+            maxX: posX,
+            maxY: posY,
+        };
+
         // this.ctx.beginPath();
         // this.ctx.moveTo(posX, posY);
         // this.ctx.stroke();
-        this.ctx.lineWidth = this.polyFill.value ? 1 : this.lineWidth.value;
+        this.app.canvasManager.viewCanvas.context.lineWidth = this.polyFill.value ? 1 : this.lineWidth.value;
         if(!this.polyFill.value)
             this.drawPoint(posX, posY, force ? force : 1)
+        this.app.canvasManager.setDirty();
     }
 
     cancelDrawing() {
@@ -632,9 +666,9 @@ export class PaintTool {
     }
 
     drawPoint(x, y, force) {
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, this.lineWidth.value * 0.5 * force, 0, Math.PI * 2);
-        this.ctx.fill();
+        this.app.canvasManager.viewCanvas.context.beginPath();
+        this.app.canvasManager.viewCanvas.context.arc(x, y, this.lineWidth.value * 0.5 * force, 0, Math.PI * 2);
+        this.app.canvasManager.viewCanvas.context.fill();
     }
 
     draw(posX, posY, force) {
@@ -644,22 +678,29 @@ export class PaintTool {
         const lastPoint = this.state.currentPath.points.at(-1);
         this.state.currentPath.points.push(newPoint);
 
-        this.ctx.beginPath();
-        this.ctx.lineWidth = Math.max(this.lineWidth.value * lastPoint.force, 1);
-        this.ctx.moveTo(lastPoint.x, lastPoint.y);
-        this.ctx.lineTo(posX, posY);
-        this.ctx.stroke();
+        this.app.canvasManager.viewCanvas.context.beginPath();
+        this.app.canvasManager.viewCanvas.context.lineWidth = Math.max(this.lineWidth.value * lastPoint.force, 1);
+        this.app.canvasManager.viewCanvas.context.moveTo(lastPoint.x, lastPoint.y);
+        this.app.canvasManager.viewCanvas.context.lineTo(posX, posY);
+        this.app.canvasManager.viewCanvas.context.stroke();
+
+        this.state.currentPath.boundingBox = {
+            minX: Math.min(this.state.currentPath.boundingBox.minX, posX),
+            minY: Math.min(this.state.currentPath.boundingBox.minY, posY),
+            maxX: Math.max(this.state.currentPath.boundingBox.maxX, posX),
+            maxY: Math.max(this.state.currentPath.boundingBox.maxY, posY),
+        };
     }
 
-    addToUndoStack(a) {
-        this.state.paths.push(a);
-        this.state.redoPaths = [];
+    // addToUndoStack(a) {
+    //     this.state.paths.push(a);
+    //     this.state.redoPaths = [];
 
-        // If we exceed maxUndoSteps, bake the oldest path into history
-        if (this.state.paths.length > this.state.maxUndoSteps) {
-            this.bakeOldestPath();
-        }
-    }
+    //     // If we exceed maxUndoSteps, bake the oldest path into history
+    //     if (this.state.paths.length > this.state.maxUndoSteps) {
+    //         this.bakeOldestPath();
+    //     }
+    // }
 
     stopDrawing(e) {
         if (!this.state.isDrawing) return;
@@ -669,51 +710,81 @@ export class PaintTool {
             // this.state.currentPath.points.length > 4;
 
         if(polyFill) {
-            this.ctx.beginPath();
+            this.app.canvasManager.viewCanvas.context.beginPath();
             const firstPoint = this.state.currentPath.points.at(-1)
-            this.ctx.moveTo(firstPoint.x, firstPoint.y)
+            this.app.canvasManager.viewCanvas.context.moveTo(firstPoint.x, firstPoint.y)
             this.state.currentPath.points.forEach(point => {
-                this.ctx.lineTo(point.x, point.y);
+                this.app.canvasManager.viewCanvas.context.lineTo(point.x, point.y);
             })
-            this.ctx.fill();
+            this.app.canvasManager.viewCanvas.context.fill();
         }
 
         this.state.isDrawing = false;
         window.onbeforeunload = function() {
             return true;
         };
-        this.debugLogger.log("stopped drawing");
+        this.console.log("stopped drawing");
 
-        if (
-            e.shiftKey &&
-            this.state.currentPath.points.length < 4 && 
-            this.state.paths.length > 0 
-        ) {
-            console.log("drawing straight line");
-            const straightPath = {
-                points: [this.state.paths.at(-1).points.at(-1), this.state.paths.at(-1).points.at(-1), this.state.currentPath.points[0], this.state.currentPath.points[0]],
-                color: this.color,
-                paintAction: this.PaintActions.Draw,
-            }
-            this.drawCompletePath(straightPath, this.ctx);
-            this.addToUndoStack({
-                points: [...straightPath.points],
-                color: this.state.currentPath.color,
-                paintAction: this.PaintActions.Draw,
-                blend: this.ctx.globalCompositeOperation,
-                polyFill: polyFill,
-                lineWidth: this.lineWidth.value,
-            });
-        }
-        else if (this.state.currentPath.points.length > 0) {
-            this.addToUndoStack({
+        // if (
+        //     e.shiftKey &&
+        //     this.state.currentPath.points.length < 4 && 
+        //     this.state.paths.length > 0 
+        // ) {
+        //     console.log("drawing straight line");
+        //     const straightPath = {
+        //         points: [this.state.paths.at(-1).points.at(-1), this.state.paths.at(-1).points.at(-1), this.state.currentPath.points[0], this.state.currentPath.points[0]],
+        //         color: this.color,
+        //         paintAction: this.PaintActions.Draw,
+        //     }
+        //     this.drawCompletePath(straightPath, this.ctx);
+        //     this.addToUndoStack({
+        //         points: [...straightPath.points],
+        //         color: this.state.currentPath.color,
+        //         paintAction: this.PaintActions.Draw,
+        //         blend: this.ctx.globalCompositeOperation,
+        //         polyFill: polyFill,
+        //         lineWidth: this.lineWidth.value,
+        //     });
+        // }
+        // else 
+        if (this.state.currentPath.points.length > 0) {
+
+            const path = {
                 points: [...this.state.currentPath.points],
                 color: this.state.currentPath.color,
                 paintAction: this.PaintActions.Draw,
-                blend: this.ctx.globalCompositeOperation,
+                blend: this.app.canvasManager.viewCanvas.context.globalCompositeOperation,
                 polyFill: polyFill,
                 lineWidth: this.lineWidth.value,
-            });
+                offset: {x: this.app.canvasManager.viewCanvas.x, y: this.app.canvasManager.viewCanvas.y},
+                boudingBox: {
+                    minX: this.state.currentPath.boundingBox.minX,
+                    minY: this.state.currentPath.boundingBox.minY,
+                    maxX: this.state.currentPath.boundingBox.maxX,
+                    maxY: this.state.currentPath.boundingBox.maxY,
+                }
+            };
+            this.state.paths.push(path);
+
+            // const bake = () => {
+            //     this.drawCompletePath(path, this.historyCtx);
+            // };
+    
+            this.app.history.addAction(
+                this.redoPath.bind(this), 
+                this.undoPath.bind(this),
+                this.bakeOldestPath.bind(this)
+            );
+    
+            this.state.redoPaths = [];
+            // this.addToUndoStack({
+            //     points: [...this.state.currentPath.points],
+            //     color: this.state.currentPath.color,
+            //     paintAction: this.PaintActions.Draw,
+            //     blend: this.ctx.globalCompositeOperation,
+            //     polyFill: polyFill,
+            //     lineWidth: this.lineWidth.value,
+            // });
         }
 
         
@@ -721,96 +792,96 @@ export class PaintTool {
     }
 
 
-    // prototype to	start drawing on touch using canvas moveTo and lineTo
-    drawTouch() {
-        const startDrawing = this.startDrawing.bind(this);
-        const draw = this.draw.bind(this);
-        const stopDrawing = this.stopDrawing.bind(this);
-        let drawingIdentifier;
-        var move = function (e) {
-            e.preventDefault();
-            for(let i = 0; i < e.touches.length; i++){
-                const touch = e.touches[i];
-                if(touch.identifier != drawingIdentifier)
-                    continue;
-                drawingIdentifier = e.identifier;
-                const x = touch.pageX - touch.target.offsetLeft;
-                const y = touch.pageY - touch.target.offsetTop;
-                draw(x, y);
-            }
-        };
-        var stop = function (e) {
-            for(let i = 0; i < e.touches.length; i++){
-                if(e.touches[i].identifier == drawingIdentifier)
-                    return;
-            }
-            stopDrawing(e);
-        };
+    // // prototype to	start drawing on touch using canvas moveTo and lineTo
+    // drawTouch() {
+    //     const startDrawing = this.startDrawing.bind(this);
+    //     const draw = this.draw.bind(this);
+    //     const stopDrawing = this.stopDrawing.bind(this);
+    //     let drawingIdentifier;
+    //     var move = function (e) {
+    //         e.preventDefault();
+    //         for(let i = 0; i < e.touches.length; i++){
+    //             const touch = e.touches[i];
+    //             if(touch.identifier != drawingIdentifier)
+    //                 continue;
+    //             drawingIdentifier = e.identifier;
+    //             const x = touch.pageX - touch.target.offsetLeft;
+    //             const y = touch.pageY - touch.target.offsetTop;
+    //             draw(x, y);
+    //         }
+    //     };
+    //     var stop = function (e) {
+    //         for(let i = 0; i < e.touches.length; i++){
+    //             if(e.touches[i].identifier == drawingIdentifier)
+    //                 return;
+    //         }
+    //         stopDrawing(e);
+    //     };
 
-        this.canvas.addEventListener("touchmove", move, false);
-        this.canvas.addEventListener("touchend", stop, false);
+    //     this.canvas.addEventListener("touchmove", move, false);
+    //     this.canvas.addEventListener("touchend", stop, false);
 
-        let touchStartTime = 0;
-        let touchCount = 0;
-        const TAP_THRESHOLD = 200; // Maximum time in ms 
+    //     let touchStartTime = 0;
+    //     let touchCount = 0;
+    //     const TAP_THRESHOLD = 200; // Maximum time in ms 
 
-        document.addEventListener('touchstart', (e) => {
-            if(this.isDrawing)
-                return;
+    //     document.addEventListener('touchstart', (e) => {
+    //         if(this.isDrawing)
+    //             return;
 
-            for(let i = 0; i < e.touches.length; i++){
-                const touch = e.touches[i];
-                // if(touch.touchType != 'stylus')
-                //     continue;
-                drawingIdentifier = e.identifier;
-                const x = touch.pageX - touch.target.offsetLeft;
-                const y = touch.pageY - touch.target.offsetTop;
-                this.startDrawing(x, y);
-                return;
-            }
+    //         for(let i = 0; i < e.touches.length; i++){
+    //             const touch = e.touches[i];
+    //             // if(touch.touchType != 'stylus')
+    //             //     continue;
+    //             drawingIdentifier = e.identifier;
+    //             const x = touch.pageX - touch.target.offsetLeft;
+    //             const y = touch.pageY - touch.target.offsetTop;
+    //             this.startDrawing(x, y);
+    //             return;
+    //         }
 
-            touchCount = e.touches.length;
-            touchStartTime = Date.now();
+    //         touchCount = e.touches.length;
+    //         touchStartTime = Date.now();
 
-            // Prevent default behavior like scrolling or zooming
-            if (touchCount >= 2) {
-                e.preventDefault();
-            }
+    //         // Prevent default behavior like scrolling or zooming
+    //         if (touchCount >= 2) {
+    //             e.preventDefault();
+    //         }
 
 
-        }, { passive: false });
+    //     }, { passive: false });
 
-        document.addEventListener('touchend', (e) => {
-            if(this.isDrawing)
-                return;
+    //     document.addEventListener('touchend', (e) => {
+    //         if(this.isDrawing)
+    //             return;
 
-            const touchDuration = Date.now() - touchStartTime;
+    //         const touchDuration = Date.now() - touchStartTime;
 
-            if (touchDuration < TAP_THRESHOLD) {
-                if (touchCount === 2) {
-                    this.undo();
-                }
-                else if (touchCount === 3) {
-                    this.redo();
-                }
-            }
-            touchCount = 0;
-        });
+    //         if (touchDuration < TAP_THRESHOLD) {
+    //             if (touchCount === 2) {
+    //                 this.undo();
+    //             }
+    //             else if (touchCount === 3) {
+    //                 this.redo();
+    //             }
+    //         }
+    //         touchCount = 0;
+    //     });
 
-        // Prevent default touch behaviors that might interfere
-        document.addEventListener('touchmove', (e) => {
-            if (touchCount >= 2) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+    //     // Prevent default touch behaviors that might interfere
+    //     document.addEventListener('touchmove', (e) => {
+    //         if (touchCount >= 2) {
+    //             e.preventDefault();
+    //         }
+    //     }, { passive: false });
 
-        // Prevent context menu from appearing on long press
-        document.addEventListener('contextmenu', (e) => {
-            if (touchCount >= 2) {
-                e.preventDefault();
-            }
-        });
-    };
+    //     // Prevent context menu from appearing on long press
+    //     document.addEventListener('contextmenu', (e) => {
+    //         if (touchCount >= 2) {
+    //             e.preventDefault();
+    //         }
+    //     });
+    // };
 
     // prototype to	start drawing on pointer(microsoft ie) using canvas moveTo and lineTo
     drawPointer() {
@@ -833,8 +904,8 @@ export class PaintTool {
         var stop = function (e) {
             stopDrawing(e);
         };
-        this.canvas.addEventListener("MSPointerDown", start, false);
-        this.canvas.addEventListener("MSPointerMove", move, false);
+        this.app.canvasManager.viewCanvas.canvas.addEventListener("MSPointerDown", start, false);
+        this.app.canvasManager.viewCanvas.canvas.addEventListener("MSPointerMove", move, false);
         document.addEventListener("MSPointerUp", stop, false);
     };
 
@@ -862,109 +933,125 @@ export class PaintTool {
             clicked = 0;
             stopDrawing(e);
         };
-        this.canvas.addEventListener("mousedown", start, false);
-        this.canvas.addEventListener("mousemove", move, false);
+        this.app.canvasManager.viewCanvas.canvas.addEventListener("mousedown", start, false);
+        this.app.canvasManager.viewCanvas.canvas.addEventListener("mousemove", move, false);
         document.addEventListener("mouseup", stop, false);
     };
 
     keyboardShortcuts() {
-        const handleShortcut = (e) => {
-            if (e.key === "z" && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                if(e.shiftKey) {
-                    this.debugLogger.log("redo keyboard shortcut");
-                    this.redo();
-                }
-                else {
-                    this.debugLogger.log("undo keyboard shortcut");
-                    this.undo();
-                }
-            }
-            else if(e.key === 'e') {
-                this.eraser.btn.click();
-            }
-            else if(e.key === 'f') {
-                this.polyFill.btn.click();
-            }
-            else if(e.key === '[') {
-                this.lineWidth.value -= this.lineWidth.step;
-                this.lineWidth.validate();
-                this.setPreview();
-            }
-            else if(e.key === ']') {
-                this.lineWidth.value += this.lineWidth.step;
-                this.lineWidth.validate();
-                this.setPreview();
-            }
-        }
-        document.addEventListener("keydown", handleShortcut);
+        const shortcuts = this.app.keyboardShortcuts;
+        // shortcuts.register("z", (e) => {
+        //     if (e.ctrlKey || e.metaKey) {
+        //         e.preventDefault();
+        //         if(e.shiftKey) {
+        //             this.console.log("redo keyboard shortcut");
+        //             this.redo();
+        //         }
+        //         else {
+        //             this.console.log("undo keyboard shortcut");
+        //             this.undo();
+        //     }
+        //     }   
+        // });
+        shortcuts.register( 'e', () => {
+            this.eraser.btn.click();
+        });
+        shortcuts.register( 'f', () => {
+            this.polyFill.btn.click();
+        });
+        shortcuts.register( '[' , () => {
+            this.lineWidth.value -= this.lineWidth.step;
+            this.lineWidth.validate();
+            this.setPreview();
+        });
+        shortcuts.register( ']' , () => {
+            this.lineWidth.value += this.lineWidth.step;
+            this.lineWidth.validate();
+            this.setPreview();
+        });
+        const offset = 50;
+        shortcuts.register("ArrowLeft", (e) => {
+            e.preventDefault();
+            this.app.canvasManager.pan(-offset, 0);
+        });
+        shortcuts.register("ArrowRight", (e) => {
+            e.preventDefault();
+            this.app.canvasManager.pan(offset, 0);
+        });
+        shortcuts.register("ArrowUp", (e) => {
+            e.preventDefault();
+            this.app.canvasManager.pan(0, -offset);
+        });
+        shortcuts.register("ArrowDown", (e) => {
+            e.preventDefault();
+            this.app.canvasManager.pan(0, offset);
+        });
     }
 
     // Undo/Redo functions
-    undo() {
+    undoPath() {
         if (this.state.paths.length === 0) return;
 
         const pathToUndo = this.state.paths.pop();
         this.state.redoPaths.push(pathToUndo);
-        if(pathToUndo.paintAction === this.PaintActions.CanvasFill) {
-            this.canvas.style.backgroundColor = pathToUndo.colorBefore;
-        }
-        else {
-            this.redrawCanvas();
-        }
+        this.redrawCanvas();
     }
 
-    redo() {
+    redoPath() {
         if (this.state.redoPaths.length === 0) return;
 
         const pathToRedo = this.state.redoPaths.pop();
         this.state.paths.push(pathToRedo);
-        if(pathToRedo.paintAction === this.PaintActions.CanvasFill) {
-            this.canvas.style.backgroundColor = pathToRedo.color;
-        }
-        else {
-            this.redrawCanvas();
-        }
+        this.redrawCanvas();
     }
 
     redrawCanvas() {
         // Clear active canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.app.canvasManager.viewCanvas.clear();
 
-        this.ctx.globalCompositeOperation = 'source-over';
+        this.app.canvasManager.viewCanvas.context.globalCompositeOperation = 'source-over';
         // Copy history canvas content to active canvas
-        this.ctx.drawImage(this.historyCanvas, 0, 0);
+        this.app.canvasManager.viewCanvas.context.drawImage(this.app.canvasManager.historyCanvas.canvas, 0, 0);
 
         // Redraw all paths in the undo stack
         for (const path of this.state.paths) {
-            this.drawCompletePath(path, this.ctx);
+            this.drawCompletePath(path, this.app.canvasManager.viewCanvas);
         }
 
         this.selectColor();
     }
 
-    drawCompletePath(path, ctx) {
-        ctx.globalCompositeOperation = path.blend;
+    drawCompletePath(path, viewCanvas) {
+        viewCanvas.context.globalCompositeOperation = path.blend;
         if(path.paintAction === this.PaintActions.Draw) {
-            ctx.lineWidth = path.lineWidth;
-            ctx.strokeStyle = path.color;
-            ctx.fillStyle = path.color;
-            ctx.beginPath();
+            viewCanvas.context.lineWidth = path.lineWidth;
+            viewCanvas.context.strokeStyle = path.color;
+            viewCanvas.context.fillStyle = path.color;
+            viewCanvas.context.beginPath();
             for (let i = 1; i < path.points.length; i++) {
-                ctx.lineWidth = Math.max(path.lineWidth * path.points[i].force, 1);
-                ctx.lineTo(path.points[i].x, path.points[i].y);
+                viewCanvas.context.lineWidth = Math.max(path.lineWidth * path.points[i].force, 1);
+                viewCanvas.context.lineTo(
+                    path.points[i].x + path.offset.x - viewCanvas.x, 
+                    path.points[i].y + path.offset.y - viewCanvas.y
+                );
             }
-            ctx.stroke();
+            viewCanvas.context.stroke();
             if(path.polyFill)
                 ctx.fill()
         }
+
+        this.app.canvasManager.setDirty();
     }
 
     // Remove oldest path and draw it on the history canvas
     bakeOldestPath() {
+        // if outside viewCanvas
+        //      bake to tiles
+        // else
+        //      bake to current history
         const path = this.state.paths.shift();
-        if(path.paintAction === this.PaintActions.CanvasFill) return;
-        const ctx = this.historyCtx;
-        this.drawCompletePath(path, ctx);        
+        this.drawCompletePath(path, this.this.app.canvasManager.historyCanvas);        
+
+
     }
 }

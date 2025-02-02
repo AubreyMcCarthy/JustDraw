@@ -1,8 +1,9 @@
 
 export class TouchInputManager {
-    constructor(paintTool, debugLogger) {
-        this.debugLogger = debugLogger;
-        this.paintTool = paintTool;
+    constructor(app) {
+        this.app = app;
+        this.console = app.console;
+        this.paintTool = app.paintTool;
         this.canvas = this.paintTool.canvas;
         this.reset();
 
@@ -22,7 +23,7 @@ export class TouchInputManager {
         // this.chooseInput()
         // this.attach(this.paintTool.canvas);
         // this.attachFingerPaint(this.paintTool.canvas);
-        this.waitForTouchInput(this.paintTool.canvas);
+        this.waitForTouchInput(this.app.canvasManager.viewCanvas.canvas);
     }
 
     reset() {
@@ -41,7 +42,7 @@ export class TouchInputManager {
     }
 
     attach(element) {
-        this.debugLogger.log("attaching to " + element);
+        this.console.log("attaching to " + element);
 
         element.addEventListener('touchstart', this.handleTouchStart, { passive: false });
         element.addEventListener('touchmove', this.handleTouchMove, { passive: false });
@@ -78,7 +79,7 @@ export class TouchInputManager {
 
             // Check if this is a pencil touch
             if (touch.touchType === 'stylus') {
-                this.debugLogger.log('pencil touch started');
+                this.console.log('pencil touch started');
                 // If no drawing is in progress, start drawing
                 if (!this.isDrawing) {
                     this.pencilTouch = touch;
@@ -242,27 +243,27 @@ export class TouchInputManager {
 
     // Placeholder methods to be implemented by the user
     startDrawing(x, y, force) {
-        this.debugLogger.log(`Start drawing at: ${x}, ${y}, force:${force ? force : "no force applied"}`);
+        this.console.log(`Start drawing at: ${x}, ${y}, force:${force ? force : "no force applied"}`);
         this.paintTool.startDrawing(x, y, force);
     }
 
     draw(x, y, fingerCount, force) {
-        // this.debugLogger.log('Drawing at:', x, y, 'with', fingerCount, 'fingers');
+        // this.console.log('Drawing at:', x, y, 'with', fingerCount, 'fingers');
         this.paintTool.draw(x, y, force);
     }
 
     stopDrawing(event) {
-        this.debugLogger.log('Stop drawing');
+        this.console.log('Stop drawing');
         this.paintTool.stopDrawing(event);
     }
 
     undo() {
-        this.debugLogger.log('Undo');
+        this.console.log('Undo');
         this.paintTool.undo();
     }
 
     redo() {
-        this.debugLogger.log('Redo');
+        this.console.log('Redo');
         this.paintTool.redo();
     }
 
@@ -273,12 +274,12 @@ export class TouchInputManager {
 
     changeTouchInputMethod(pencil) {
         if(pencil) {
-            this.debugLogger.log("setting touch input method to pencil");
+            this.console.log("setting touch input method to pencil");
             this.detachFingerPaint(this.canvas);
             this.attach(this.canvas);
         }
         else {
-            this.debugLogger.log("setting touch input method to finger");
+            this.console.log("setting touch input method to finger");
             this.detach(this.canvas);
             this.attachFingerPaint(this.canvas);
         }
