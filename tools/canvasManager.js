@@ -134,6 +134,24 @@ export class CanvasManager {
         this.isDirty = false;
     }
 
+    getTileFromPath(path) {
+        const startCoords = this.getTileCoordinates(path.offset.x + path.boundingBox.minX, path.offset.y + path.boundingBox.minY);
+        const endCoords = this.getTileCoordinates(
+            path.offset.x + path.boundingBox.maxX,
+            path.offset.y + path.boundingBox.maxY
+        );
+
+        const tiles = [];
+        // Iterate through all affected tiles
+        for (let tileX = startCoords.tileX; tileX <= endCoords.tileX; tileX++) {
+            for (let tileY = startCoords.tileY; tileY <= endCoords.tileY; tileY++) {
+                tiles.push(this.getTile(tileX, tileY));
+                
+            }
+        }
+        return tiles;
+    }
+
     // Render the current view from tiles
     render() {
         this.historyCanvas.clear()

@@ -1037,7 +1037,7 @@ export class PaintTool {
             }
             viewCanvas.context.stroke();
             if(path.polyFill)
-                ctx.fill()
+                viewCanvas.context.fill()
         }
 
         this.app.canvasManager.setDirty();
@@ -1045,13 +1045,23 @@ export class PaintTool {
 
     // Remove oldest path and draw it on the history canvas
     bakeOldestPath() {
-        // if outside viewCanvas
-        //      bake to tiles
-        // else
-        //      bake to current history
         const path = this.state.paths.shift();
-        this.drawCompletePath(path, this.this.app.canvasManager.historyCanvas);        
-
+        this.drawCompletePath(path, this.app.canvasManager.historyCanvas);
+        
+        // if path goes out of bounds
+        // bake to tiles
+        if ( 
+            path.offset.x + path.boundingBox.minX < this.canvasManager.viewCanvas.x ||
+            path.offset.y + path.boundingBox.minY < this.canvasManager.viewCanvas.y ||
+            path.offset.x + path.boundingBox.maxX > this.canvasManager.viewCanvas.x + this.canvasManager.viewCanvas.width ||
+            path.offset.y + path.boundingBox.maxY > this.canvasManager.viewCanvas.y + this.canvasManager.viewCanvas.height
+        ) {
+            this.app.console.log("path goes out of bounds! drawing to tiles");
+            const tiles = this.canvasManager.getTileFromPath(path);
+            for( let tile in tiles ) {
+                this.drawCompletePath(path, tile);
+            }
+        }
 
     }
 }
