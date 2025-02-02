@@ -916,18 +916,26 @@ export class PaintTool {
         const startDrawing = this.startDrawing.bind(this);
         const draw = this.draw.bind(this);
         const stopDrawing = this.stopDrawing.bind(this);
-        var start = function (e) { 
+        var start = (e) => { 
             if (e.which != 1) 
                 return;
             clicked = 1;
+            
+            if(this.app.canvasManager.dragging)
+                return;
             startDrawing(e.offsetX, e.offsetY);
         };
-        var move = function (e) {
+        var move = (e) => {
             if (clicked) {
-                draw(e.offsetX, e.offsetY);
+                if(this.app.canvasManager.dragging) {
+                    this.app.canvasManager.pan(-Math.round(e.movementX), -Math.round(e.movementY));
+                }
+                else {
+                    draw(e.offsetX, e.offsetY);
+                }
             }
         };
-        var stop = function (e) {
+        var stop = (e) => {
             if (e.which != 1) 
                 return;
             clicked = 0;
@@ -969,23 +977,7 @@ export class PaintTool {
             this.lineWidth.validate();
             this.setPreview();
         });
-        const offset = 50;
-        shortcuts.register("ArrowLeft", (e) => {
-            e.preventDefault();
-            this.app.canvasManager.pan(-offset, 0);
-        });
-        shortcuts.register("ArrowRight", (e) => {
-            e.preventDefault();
-            this.app.canvasManager.pan(offset, 0);
-        });
-        shortcuts.register("ArrowUp", (e) => {
-            e.preventDefault();
-            this.app.canvasManager.pan(0, -offset);
-        });
-        shortcuts.register("ArrowDown", (e) => {
-            e.preventDefault();
-            this.app.canvasManager.pan(0, offset);
-        });
+        
     }
 
     // Undo/Redo functions

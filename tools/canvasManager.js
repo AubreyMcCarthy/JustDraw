@@ -35,17 +35,65 @@ export class CanvasManager {
         this.handleResize = this.handleResize.bind(this);
         window.addEventListener('resize', this.handleResize);
         // this.handleResize();
+
+        this.dragging = false;
+
+        const shortcuts = this.app.keyboardShortcuts;
+        const offset = 50;
+        shortcuts.register("ArrowLeft", (e) => {
+            e.preventDefault();
+            this.pan(-offset, 0);
+        });
+        shortcuts.register("ArrowRight", (e) => {
+            e.preventDefault();
+            this.pan(offset, 0);
+        });
+        shortcuts.register("ArrowUp", (e) => {
+            e.preventDefault();
+            this.pan(0, -offset);
+        });
+        shortcuts.register("ArrowDown", (e) => {
+            e.preventDefault();
+            this.pan(0, offset);
+        });
+        shortcuts.register("h", (e) => {
+            e.preventDefault();
+            this.home();
+        });
+
+        shortcuts.register("ArrowLeft", (e) => {
+            e.preventDefault();
+            this.pan(-offset, 0);
+        });
+
+        shortcuts.register(" ", (e) => {
+            if(this.dragging)
+                return;
+            e.preventDefault();
+            this.dragging = true;
+            this.app.console.log("space down");
+            this.viewCanvas.canvas.style.cursor = 'grab';
+        });
+
+        shortcuts.registerKeyUp(" ", (e) => {
+            if(!this.dragging)
+                return;
+            e.preventDefault();
+            this.dragging = false;
+            this.app.console.log("space up");
+            this.viewCanvas.canvas.style.cursor = '';
+        });
     }
 
     handleResize() {
         this.viewCanvas.width =
             this.viewCanvas.canvas.width = 
             this.historyCanvas.canvas.width = 
-            this.historyCanvas.width = this.viewCanvas.width;
+            this.historyCanvas.width = window.innerWidth;
         this.viewCanvas.canvas.height = 
             this.historyCanvas.canvas.height = 
             this.viewCanvas.height = 
-            this.historyCanvas.height = this.viewCanvas.height;
+            this.historyCanvas.height = window.innerHeight;
         this.render();
 
         // this.historyCanvas.context.clearRect(0, 0, this.viewCanvas.width, this.viewCanvas.height);
@@ -77,11 +125,10 @@ export class CanvasManager {
     // Pan the viewport
     pan(deltaX, deltaY) {
         this.moveTo(this.viewCanvas.x + deltaX, this.viewCanvas.y + deltaY);
-        this.app.console.log(`panning canvas ${deltaX}, ${deltaY}, to view ${this.viewCanvas.x}, ${this.viewCanvas.y}`);
     }
 
     home() {
-        moveTo(0,0);
+        this.moveTo(0,0);
         this.app.console.log(`reseting view to ${this.viewCanvas.x}, ${this.viewCanvas.y}`);
     }
 
@@ -118,7 +165,7 @@ export class CanvasManager {
 
                 // Copy the relevant portion of the view to this tile
                 tile.context.drawImage(
-                    this.historyCanvas,
+                    this.historyCanvas.canvas,
                     intersectX - this.viewCanvas.x,
                     intersectY - this.viewCanvas.y,
                     intersectWidth,
