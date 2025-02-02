@@ -413,12 +413,18 @@ export class IO {
         // Add project metadata
         zip.file("metadata.json", JSON.stringify({
             version: "0.1",
-            backgroundColor: this.paintTool.canvas.style.backgroundColor
+            backgroundColor: this.app.canvasManager.viewCanvas.canvas.style.backgroundColor
         }));
         
         // Add main canvas
-        zip.file("canvas.png", this.paintTool.canvas.toDataURL().split(',')[1], {base64: true});
-        
+        // zip.file("canvas.png", this.paintTool.canvas.toDataURL().split(',')[1], {base64: true});
+        const tiles = this.app.canvasManager.tiles;
+        console.log(tiles);
+        tiles.forEach((value, key) => {
+            console.log(value, key);
+            console.log(`saving tile ${key}`);
+            zip.file(`canvas_${key}.png`, value.canvas.toDataURL().split(',')[1], {base64: true});
+        })
         // // Add thumbnail
         // const thumbnail = generateThumbnail(canvas, 256, 256);
         // zip.file("thumbnail.png", thumbnail.split(',')[1], {base64: true});

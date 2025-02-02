@@ -25,7 +25,7 @@ export class CanvasManager {
         document.body.appendChild(this.viewCanvas.canvas);
         this.historyCanvas = new AppCanvas(0, 0, window.innerWidth, window.innerHeight);
         
-        // Map of tiles using string keys "x,y"
+        // Map of tiles using string keys "x_y"
         this.tiles = new Map();
         
         // Track dirty state
@@ -105,7 +105,7 @@ export class CanvasManager {
 
     // Get tile at specified coordinates, creating if necessary
     getTile(x, y) {
-        const key = `${x},${y}`;
+        const key = `${x}_${y}`;
         if (!this.tiles.has(key)) {
             this.tiles.set(key, new AppCanvas(x, y, this.tileSize, this.tileSize));
         }
@@ -164,6 +164,7 @@ export class CanvasManager {
                 const intersectHeight = Math.min((tileY + 1) * this.tileSize, this.viewCanvas.y + this.viewCanvas.height) - intersectY;
 
                 // Copy the relevant portion of the view to this tile
+                tile.context.globalCompositeOperation = 'source-over';
                 tile.context.drawImage(
                     this.historyCanvas.canvas,
                     intersectX - this.viewCanvas.x,
@@ -214,6 +215,7 @@ export class CanvasManager {
             for (let tileY = startCoords.tileY; tileY <= endCoords.tileY; tileY++) {
                 const tile = this.getTile(tileX, tileY);
                 
+                this.historyCanvas.context.globalCompositeOperation = 'source-over';
                 this.historyCanvas.context.drawImage(
                     tile.canvas,
                     0,
@@ -228,7 +230,7 @@ export class CanvasManager {
             }
         }
         for(var i = 0; i < this.renderCallbacks.length; i++) {
-            this.renderCallbacks[i]()
+            this.renderCallbacks[i]();
         }
     }
 
