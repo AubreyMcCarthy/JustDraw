@@ -483,6 +483,8 @@ export class PaintTool {
 
         this.app.canvasManager.renderCallbacks.push(this.redrawCanvas.bind(this));
 
+        this.app.io.saveCallbacks.push(this.drawAllPaths.bind(this));
+
         // const randomBgColor = Math.floor(Math.random() * 6);
         // this.clearCanvas(window.innerWidth, window.innerHeight, this.colors.at(randomBgColor).color);
     }
@@ -643,7 +645,7 @@ export class PaintTool {
         this.state.currentPath.points.push({ x: posX, y: posY, force: force ? force : 1 });
         this.state.currentPath.points.push({ x: posX, y: posY, force: force ? force : 1 });
 
-        this.state.currentPath.boundingBox = {
+        this.state.currentPath.bounds = {
             minX: posX,
             minY: posY,
             maxX: posX,
@@ -684,11 +686,11 @@ export class PaintTool {
         this.app.canvasManager.viewCanvas.context.lineTo(posX, posY);
         this.app.canvasManager.viewCanvas.context.stroke();
 
-        this.state.currentPath.boundingBox = {
-            minX: Math.min(this.state.currentPath.boundingBox.minX, posX),
-            minY: Math.min(this.state.currentPath.boundingBox.minY, posY),
-            maxX: Math.max(this.state.currentPath.boundingBox.maxX, posX),
-            maxY: Math.max(this.state.currentPath.boundingBox.maxY, posY),
+        this.state.currentPath.bounds = {
+            minX: Math.min(this.state.currentPath.bounds.minX, posX),
+            minY: Math.min(this.state.currentPath.bounds.minY, posY),
+            maxX: Math.max(this.state.currentPath.bounds.maxX, posX),
+            maxY: Math.max(this.state.currentPath.bounds.maxY, posY),
         };
     }
 
@@ -723,7 +725,6 @@ export class PaintTool {
         window.onbeforeunload = function() {
             return true;
         };
-        this.console.log("stopped drawing");
 
         // if (
         //     e.shiftKey &&
@@ -756,12 +757,12 @@ export class PaintTool {
                 blend: this.app.canvasManager.viewCanvas.context.globalCompositeOperation,
                 polyFill: polyFill,
                 lineWidth: this.lineWidth.value,
-                offset: {x: this.app.canvasManager.viewCanvas.x, y: this.app.canvasManager.viewCanvas.y},
-                boudingBox: {
-                    minX: this.state.currentPath.boundingBox.minX,
-                    minY: this.state.currentPath.boundingBox.minY,
-                    maxX: this.state.currentPath.boundingBox.maxX,
-                    maxY: this.state.currentPath.boundingBox.maxY,
+                offset: {x: this.app.canvasManager.viewCanvas.offsetX, y: this.app.canvasManager.viewCanvas.offsetY},
+                bounds: {
+                    minX: this.state.currentPath.bounds.minX,
+                    minY: this.state.currentPath.bounds.minY,
+                    maxX: this.state.currentPath.bounds.maxX,
+                    maxY: this.state.currentPath.bounds.maxY,
                 }
             };
             this.state.paths.push(path);
@@ -948,19 +949,7 @@ export class PaintTool {
 
     keyboardShortcuts() {
         const shortcuts = this.app.keyboardShortcuts;
-        // shortcuts.register("z", (e) => {
-        //     if (e.ctrlKey || e.metaKey) {
-        //         e.preventDefault();
-        //         if(e.shiftKey) {
-        //             this.console.log("redo keyboard shortcut");
-        //             this.redo();
-        //         }
-        //         else {
-        //             this.console.log("undo keyboard shortcut");
-        //             this.undo();
-        //     }
-        //     }   
-        // });
+
         shortcuts.register( 'e', () => {
             this.eraser.btn.click();
         });
@@ -1023,8 +1012,8 @@ export class PaintTool {
             for (let i = 1; i < path.points.length; i++) {
                 viewCanvas.context.lineWidth = Math.max(path.lineWidth * path.points[i].force, 1);
                 viewCanvas.context.lineTo(
-                    path.points[i].x + path.offset.x - viewCanvas.x, 
-                    path.points[i].y + path.offset.y - viewCanvas.y
+                    path.points[i].x + path.offset.x - viewCanvas.offsetX, 
+                    path.points[i].y + path.offset.y - viewCanvas.offsetY
                 );
             }
             viewCanvas.context.stroke();
@@ -1035,6 +1024,13 @@ export class PaintTool {
         this.app.canvasManager.setDirty();
     }
 
+    drawAllPaths(viewCanvas) {
+        for(const path in this.state.paths) {
+            console.log(`saving path ${path} to canvas ${viewCanvas.offsetX} ${viewCanvas.offsetY}`);
+            this.drawCompletePath(path, viewCanvas);
+        }
+    }
+
     // Remove oldest path and draw it on the history canvas
     bakeOldestPath() {
         const path = this.state.paths.shift();
@@ -1043,16 +1039,23 @@ export class PaintTool {
         // if path goes out of bounds
         // bake to tiles
         if ( 
-            path.offset.x + path.boundingBox.minX < this.canvasManager.viewCanvas.x ||
-            path.offset.y + path.boundingBox.minY < this.canvasManager.viewCanvas.y ||
-            path.offset.x + path.boundingBox.maxX > this.canvasManager.viewCanvas.x + this.canvasManager.viewCanvas.width ||
-            path.offset.y + path.boundingBox.maxY > this.canvasManager.viewCanvas.y + this.canvasManager.viewCanvas.height
+            path.offset.x + path.bounds.minX < this.app.canvasManager.viewCanvas.offsetX ||
+            path.offset.y + path.bounds.minY < this.app.canvasManager.viewCanvas.offsetY ||
+            path.offset.x + path.bounds.maxX > this.app.canvasManager.viewCanvas.offsetX + this.app.canvasManager.viewCanvas.width ||
+            path.offset.y + path.bounds.maxY > this.app.canvasManager.viewCanvas.offsetY + this.app.canvasManager.viewCanvas.height
         ) {
-            this.app.console.log("path goes out of bounds! drawing to tiles");
-            const tiles = this.canvasManager.getTileFromPath(path);
-            for( let tile in tiles ) {
-                this.drawCompletePath(path, tile);
-            }
+            
+            const drawCompletePath = this.drawCompletePath.bind(this);
+            const bounds = {
+                minX: path.offset.x + path.bounds.minX, 
+                minY: path.offset.y + path.bounds.minY,
+                maxX: path.offset.x + path.bounds.maxX,
+                maxY: path.offset.y + path.bounds.maxY
+            };
+            console.log("path is out of bounds" + bounds);
+            this.app.canvasManager.applyToTiles(bounds, (tile) => {
+                drawCompletePath(path, tile);
+            });
         }
 
     }

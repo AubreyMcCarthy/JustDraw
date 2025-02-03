@@ -1,3 +1,5 @@
+import { AppCanvas } from "./canvasManager.js";
+
 export class IO {
     constructor(app) {
         this.app = app;
@@ -41,6 +43,7 @@ export class IO {
         }
 
         this.createUI();
+        this.saveCallbacks = [];
     }
 
     createUI() {
@@ -221,7 +224,6 @@ export class IO {
         });
     }
     setSelectionVisability(){
-        // console.log("setting full screen selection box vsiablity: " + this.fullScreen.value);
         if(this.selectArea.value) {
             this.controls.appendChild(this.selectionBG);
             this.setSelection();
@@ -409,6 +411,8 @@ export class IO {
 
     async saveProject() {
         const zip = new JSZip();
+
+        // this.app.history.bakeAll();
         
         // Add project metadata
         zip.file("metadata.json", JSON.stringify({
@@ -418,12 +422,21 @@ export class IO {
         
         // Add main canvas
         // zip.file("canvas.png", this.paintTool.canvas.toDataURL().split(',')[1], {base64: true});
+        const viewCanvas = new AppCanvas(0, 0, this.app.canvasManager.tileSize, this.app.canvasManager.tileSize);
         const tiles = this.app.canvasManager.tiles;
-        console.log(tiles);
         tiles.forEach((value, key) => {
-            console.log(value, key);
             console.log(`saving tile ${key}`);
-            zip.file(`canvas_${key}.png`, value.canvas.toDataURL().split(',')[1], {base64: true});
+            viewCanvas.clear();
+            viewCanvas.context.drawImage(value.canvas, 0, 0);
+            viewCanvas.x = value.offsetX;
+            viewCanvas.y = value.offsetY;
+            // for(var i = 0; i < this.saveCallbacks.length; i++) {
+            //     this.saveCallbacks[i](viewCanvas);
+            // }
+            this.app.paintTool.drawAllPaths(viewCanvas);
+
+            zip.file(`canvas_${key}.png`, viewCanvas.canvas.toDataURL().split(',')[1], {base64: true});
+            
         })
         // // Add thumbnail
         // const thumbnail = generateThumbnail(canvas, 256, 256);
@@ -436,7 +449,7 @@ export class IO {
         const url = URL.createObjectURL(content);
         const a = document.createElement('a');
         a.href = url;
-        a.download = "drawing-project.webproj";
+        a.download = "drawing-project.zip";
         a.click();
         URL.revokeObjectURL(url);
     }

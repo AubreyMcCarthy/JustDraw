@@ -5,8 +5,6 @@ export class History {
         this.actions = [];
         this.redoActions = [];
         this.maxUndoSteps = 5;
-        this.paths = [];
-        this.redoPaths = [];
 
 
         const shortcuts = this.app.keyboardShortcuts;
@@ -25,8 +23,8 @@ export class History {
 
     getPreviousAction() { return this.actions.at(-1); }
 
-    addAction(action, undoAction, baked) {
-        this.actions.push({action, undoAction, baked});
+    addAction(action, undoAction, bake) {
+        this.actions.push({action, undoAction, bake});
         this.redoActions = [];
         
     
@@ -40,6 +38,18 @@ export class History {
         const path = this.actions.shift();
         if(path.bake)
             path.bake();
+    }
+
+    bakeAll() {
+        // while(this.actions.length > 0){
+        //     const path = this.actions.shift();
+        //     // this.app.console.log(`baking oldest action, action: ${path.bake}`);
+        //     if(path.bake)
+        //         path.bake();
+        // }
+        this.app.paintTool.bakeAllPaths();
+        this.actions = [];
+        this.redoActions = [];
     }
     
    undo() {

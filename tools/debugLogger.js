@@ -39,12 +39,12 @@ export class DebugLogger {
     setMessage() {
         if(this.hidden) return;
 
-        let m = "";
-        for(const message in this.messages) {
-            m += `\n<p>${this.messages[message]}</p>`;
-        }
-        this.box.innerHTML = m;
-        this.box.scrollTop = this.box.scrollHeight;
+        // let m = "";
+        // for(const message in this.messages) {
+        //     m += `\n<p>${this.messages[message]}</p>`;
+        // }
+        // this.box.innerHTML = m;
+        // this.box.scrollTop = this.box.scrollHeight;
     }
 
     toggle() {
@@ -59,5 +59,8 @@ export class DebugLogger {
             this.setMessage();
         }
         
+    }
+
+    add(el) {
     }
 }

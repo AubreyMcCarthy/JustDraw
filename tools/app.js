@@ -14,6 +14,9 @@ export class App {
         const keyboardShortcuts = new KeyboardShortcuts(this);
         this.keyboardShortcuts = keyboardShortcuts;
 
+        const io = new IO(this);
+        this.io = io;
+
         this.history = new History(this);
 
         const canvasManager = new CanvasManager(this);
@@ -25,7 +28,5 @@ export class App {
         paintTool.init();
         const touchInputManager = new TouchInputManager(this);
         this.touchInputManager = touchInputManager;
-        const io = new IO(this);
-        this.io = io;
     }
 }
