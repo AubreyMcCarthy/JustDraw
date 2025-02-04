@@ -122,6 +122,8 @@ export class TouchInputManager {
             if(this.touches.get(event.touches[0].identifier).previousX) {
                 let deltaX = (event.touches[0].pageX - this.touches.get(event.touches[0].identifier).previousX + event.touches[1].pageX - this.touches.get(event.touches[1].identifier).previousX) * 0.5;
                 let deltaY = (event.touches[0].pageY - this.touches.get(event.touches[0].identifier).previousY + event.touches[1].pageY - this.touches.get(event.touches[1].identifier).previousY) * 0.5;
+
+                this.draggedBy = Math.abs(deltaX) + Math.abs(deltaY);
                 this.app.canvasManager.pan(-deltaX, -deltaY);
             }
             this.touches.get(event.touches[0].identifier).previousX = event.touches[0].pageX;
@@ -164,8 +166,9 @@ export class TouchInputManager {
                 if(this.activeFingerCount === 0) {
                     const TAP_THRESHOLD = 300; // Maximum time in ms 
                     const touchDuration = Date.now() - this.tapGestureIntiated;
+                    const DRAG_CUTOFF = 1.5;
 
-                    if (touchDuration < TAP_THRESHOLD) {
+                    if (this.draggedBy < DRAG_CUTOFF && touchDuration < TAP_THRESHOLD) {
                         if (this.tapGestureFingerCount === 2) {
                             this.undo();
                         }
@@ -174,6 +177,7 @@ export class TouchInputManager {
                         }
                     }
                     this.tapGestureFingerCount = 0;
+                    this.draggedBy = 0;
                 }
             }
         }
