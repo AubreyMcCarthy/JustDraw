@@ -108,14 +108,28 @@ export class TouchInputManager {
         event.preventDefault();
 
         // If we're drawing with the pencil, only track that movement
-        if (this.isDrawing && this.pencilTouch) {
-            for (const touch of event.changedTouches) {
-                if (touch.identifier === this.pencilTouch.identifier) {
-                    this.draw(touch.clientX, touch.clientY, this.activeFingerCount, this.mapForce(touch.force));
-                    break;
+        if (this.pencilTouch) {
+            if (this.isDrawing) {
+                for (const touch of event.changedTouches) {
+                    if (touch.identifier === this.pencilTouch.identifier) {
+                        this.draw(touch.clientX, touch.clientY, this.activeFingerCount, this.mapForce(touch.force));
+                        break;
+                    }
                 }
             }
+        } 
+        else if (this.activeFingerCount === 2){
+            if(this.touches.get(event.touches[0].identifier).previousX) {
+                let deltaX = (event.touches[0].pageX - this.touches.get(event.touches[0].identifier).previousX + event.touches[1].pageX - this.touches.get(event.touches[1].identifier).previousX) * 0.5;
+                let deltaY = (event.touches[0].pageY - this.touches.get(event.touches[0].identifier).previousY + event.touches[1].pageY - this.touches.get(event.touches[1].identifier).previousY) * 0.5;
+                this.app.canvasManager.pan(deltaX, deltaY);
+            }
+            this.touches.get(event.touches[0].identifier).previousX = event.touches[0].pageX;
+            this.touches.get(event.touches[0].identifier).previousY = event.touches[0].pageY;
+            this.touches.get(event.touches[1].identifier).previousX = event.touches[1].pageX;
+            this.touches.get(event.touches[1].identifier).previousY = event.touches[1].pageY;
         }
+        // this.previousTouches = this.touches;
     }
 
     mapForce(force) {
@@ -274,7 +288,7 @@ export class TouchInputManager {
     changeTouchInputMethod(pencil) {
         if(pencil) {
             this.console.log("setting touch input method to pencil");
-            this.detachFingerPaint(this.app.canvasManager.viewCanvas.canvas.canvas);
+            this.detachFingerPaint(this.app.canvasManager.viewCanvas.canvas);
             this.attach(this.app.canvasManager.viewCanvas.canvas);
         }
         else {
