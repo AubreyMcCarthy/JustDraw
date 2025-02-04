@@ -438,7 +438,7 @@ export class IO {
             }
             // this.app.paintTool.drawAllPaths(viewCanvas);
 
-            zip.file(`canvas_${key}.png`, viewCanvas.canvas.toDataURL().split(',')[1], {base64: true});
+            zip.file(`tiles/${key}.png`, viewCanvas.canvas.toDataURL().split(',')[1], {base64: true});
             
         })
         // // Add thumbnail
@@ -462,20 +462,34 @@ export class IO {
         
         // Read metadata
         const metadata = JSON.parse(await zip.file("metadata.json").async("string"));
-        console.log(metadata.file);
+        // console.log(metadata.file);
         console.log(metadata.backgroundColor);
+
+        this.app.paintTool.resetState();
+        this.app.canvasManager.home();
+        this.app.canvasManager.viewCanvas.canvas.style.backgroundColor = metadata.backgroundColor;
         
         // Load canvas image
-        const canvasBlob = await zip.file("canvas.png").async("blob");
-        const canvasUrl = URL.createObjectURL(canvasBlob);
-        
-        const img = new Image();
-        img.onload = () => {
-            this.paintTool.loadCanvas(img, metadata.backgroundColor);
+        zip.folder("tiles").forEach(async (relativePath, file) => {
+            console.log("iterating over", relativePath);
+            const canvasBlob = await file.async("blob");
+            const canvasUrl = URL.createObjectURL(canvasBlob);
             
-            URL.revokeObjectURL(canvasUrl);
-        };
-        img.src = canvasUrl;
+            const img = new Image();
+            img.onload = () => {
+                const coords = relativePath.split('.')[0].split('_');
+                this.app.canvasManager.loadTile(coords[0], coords[1], img);
+                
+                URL.revokeObjectURL(canvasUrl);
+                
+                this.app.canvasManager.render();
+                this.app.paintTool.redrawCanvas();
+            };
+            img.src = canvasUrl;
+        });
+
+
+    
     }
     
 }

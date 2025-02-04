@@ -22,6 +22,18 @@ export class CanvasManager {
         // Configuration
         this.tileSize = tileSize;
         
+        this.clear();
+        this.handleResize();
+
+        this.keyboardShortcuts();
+    }
+
+    clear() {
+
+        if(this.viewCanvas) {
+            document.body.removeChild(this.viewCanvas.canvas);
+        }
+
         // Create the visible canvas
         this.viewCanvas = new AppCanvas(0, 0, window.innerWidth, window.innerHeight);
         document.body.appendChild(this.viewCanvas.canvas);
@@ -29,17 +41,16 @@ export class CanvasManager {
         
         // Map of tiles using string keys "x_y"
         this.tiles = new Map();
-        
+
         // Track dirty state
         this.isDirty = false;
-        
+
         // Bind methods
         this.handleResize = this.handleResize.bind(this);
         window.addEventListener('resize', this.handleResize);
-        // this.handleResize();
+        
 
         this.dragging = false;
-        this.keyboardShortcuts();
     }
 
     handleResize() {
@@ -251,5 +262,13 @@ export class CanvasManager {
     // Clean up
     destroy() {
         window.removeEventListener('resize', this.handleResize);
+    }
+
+    loadTile(x, y, img) {
+        const key = `${x}_${y}`;
+        const tile = new AppCanvas(x, y, this.tileSize, this.tileSize);
+        tile.context.drawImage(img, 0, 0);
+        this.tiles.set(key, tile);
+
     }
 }
