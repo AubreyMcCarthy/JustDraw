@@ -122,7 +122,7 @@ export class TouchInputManager {
             if(this.touches.get(event.touches[0].identifier).previousX) {
                 let deltaX = (event.touches[0].pageX - this.touches.get(event.touches[0].identifier).previousX + event.touches[1].pageX - this.touches.get(event.touches[1].identifier).previousX) * 0.5;
                 let deltaY = (event.touches[0].pageY - this.touches.get(event.touches[0].identifier).previousY + event.touches[1].pageY - this.touches.get(event.touches[1].identifier).previousY) * 0.5;
-                this.app.canvasManager.pan(deltaX, deltaY);
+                this.app.canvasManager.pan(-deltaX, -deltaY);
             }
             this.touches.get(event.touches[0].identifier).previousX = event.touches[0].pageX;
             this.touches.get(event.touches[0].identifier).previousY = event.touches[0].pageY;
