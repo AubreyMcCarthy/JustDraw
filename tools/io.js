@@ -410,6 +410,7 @@ export class IO {
     }
 
     async saveProject() {
+        this.app.canvasManager.saveCurrentViewToTiles();
         const zip = new JSZip();
 
         // this.app.history.bakeAll();
@@ -428,12 +429,14 @@ export class IO {
             console.log(`saving tile ${key}`);
             viewCanvas.clear();
             viewCanvas.context.drawImage(value.canvas, 0, 0);
-            viewCanvas.x = value.offsetX;
-            viewCanvas.y = value.offsetY;
-            // for(var i = 0; i < this.saveCallbacks.length; i++) {
-            //     this.saveCallbacks[i](viewCanvas);
-            // }
-            this.app.paintTool.drawAllPaths(viewCanvas);
+            viewCanvas.x = value.x;
+            viewCanvas.y = value.y;
+            viewCanvas.offsetX = value.offsetX;
+            viewCanvas.offsetY = value.offsetY;
+            for(var i = 0; i < this.saveCallbacks.length; i++) {
+                this.saveCallbacks[i](viewCanvas);
+            }
+            // this.app.paintTool.drawAllPaths(viewCanvas);
 
             zip.file(`canvas_${key}.png`, viewCanvas.canvas.toDataURL().split(',')[1], {base64: true});
             

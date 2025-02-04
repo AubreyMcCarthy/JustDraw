@@ -1025,7 +1025,7 @@ export class PaintTool {
     }
 
     drawAllPaths(viewCanvas) {
-        for(const path in this.state.paths) {
+        for(const path of this.state.paths) {
             console.log(`saving path ${path} to canvas ${viewCanvas.offsetX} ${viewCanvas.offsetY}`);
             this.drawCompletePath(path, viewCanvas);
         }
