@@ -4,7 +4,6 @@ export class TouchInputManager {
         this.app = app;
         this.console = app.console;
         this.paintTool = app.paintTool;
-        this.canvas = this.paintTool.canvas;
         this.reset();
 
         this.handleTouchStart = this.handleTouchStart.bind(this);
@@ -259,12 +258,12 @@ export class TouchInputManager {
 
     undo() {
         this.console.log('Undo');
-        this.paintTool.undo();
+        this.app.history.undo();
     }
 
     redo() {
         this.console.log('Redo');
-        this.paintTool.redo();
+        this.app.history.redo();
     }
 
     waitForTouchInput(element) {
@@ -275,13 +274,13 @@ export class TouchInputManager {
     changeTouchInputMethod(pencil) {
         if(pencil) {
             this.console.log("setting touch input method to pencil");
-            this.detachFingerPaint(this.canvas);
-            this.attach(this.canvas);
+            this.detachFingerPaint(this.app.canvasManager.viewCanvas.canvas.canvas);
+            this.attach(this.app.canvasManager.viewCanvas.canvas);
         }
         else {
             this.console.log("setting touch input method to finger");
-            this.detach(this.canvas);
-            this.attachFingerPaint(this.canvas);
+            this.detach(this.app.canvasManager.viewCanvas.canvas);
+            this.attachFingerPaint(this.app.canvasManager.viewCanvas.canvas);
         }
     }
 
@@ -301,6 +300,6 @@ export class TouchInputManager {
         }
 
         this.paintTool.showTouchControls(usePencil, changeTouchInputMethod);
-        this.canvas.removeEventListener('touchstart', this.chooseInputMethod);
+        this.app.canvasManager.viewCanvas.canvas.removeEventListener('touchstart', this.chooseInputMethod);
     }
 }
