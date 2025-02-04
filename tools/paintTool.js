@@ -1038,12 +1038,12 @@ export class PaintTool {
         
         // if path goes out of bounds
         // bake to tiles
-        if ( 
-            path.offset.x + path.bounds.minX < this.app.canvasManager.viewCanvas.offsetX ||
-            path.offset.y + path.bounds.minY < this.app.canvasManager.viewCanvas.offsetY ||
-            path.offset.x + path.bounds.maxX > this.app.canvasManager.viewCanvas.offsetX + this.app.canvasManager.viewCanvas.width ||
-            path.offset.y + path.bounds.maxY > this.app.canvasManager.viewCanvas.offsetY + this.app.canvasManager.viewCanvas.height
-        ) {
+        // if ( 
+        //     path.offset.x + path.bounds.minX < this.app.canvasManager.viewCanvas.offsetX ||
+        //     path.offset.y + path.bounds.minY < this.app.canvasManager.viewCanvas.offsetY ||
+        //     path.offset.x + path.bounds.maxX > this.app.canvasManager.viewCanvas.offsetX + this.app.canvasManager.viewCanvas.width ||
+        //     path.offset.y + path.bounds.maxY > this.app.canvasManager.viewCanvas.offsetY + this.app.canvasManager.viewCanvas.height
+        // ) {
             
             const drawCompletePath = this.drawCompletePath.bind(this);
             const bounds = {
@@ -1056,7 +1056,7 @@ export class PaintTool {
             this.app.canvasManager.applyToTiles(bounds, (tile) => {
                 drawCompletePath(path, tile);
             });
-        }
+        // }
 
     }
 }

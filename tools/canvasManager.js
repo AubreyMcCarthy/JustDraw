@@ -115,6 +115,8 @@ export class CanvasManager {
 
     // Save the current view content to underlying tiles
     saveCurrentViewToTiles() {
+        return; // Trying out drawing information only travelling one direction
+        // back and forth was causing run away visual errors
         const startCoords = this.getTileCoordinates(this.viewCanvas.offsetX, this.viewCanvas.offsetY);
         const endCoords = this.getTileCoordinates(
             this.viewCanvas.offsetX + this.viewCanvas.canvas.width,
