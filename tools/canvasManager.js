@@ -34,6 +34,9 @@ export class CanvasManager {
             document.body.removeChild(this.viewCanvas.canvas);
         }
 
+        this.viewX = 0; // unrounded raw view position
+        this.viewY = 0; // use this.viewCanvas.offsetX for all work
+
         // Create the visible canvas
         this.viewCanvas = new AppCanvas(0, 0, window.innerWidth, window.innerHeight);
         document.body.appendChild(this.viewCanvas.canvas);
@@ -93,7 +96,7 @@ export class CanvasManager {
 
     // Pan the viewport
     pan(deltaX, deltaY) {
-        this.moveTo(this.viewCanvas.offsetX + deltaX, this.viewCanvas.offsetY + deltaY);
+        this.moveTo(this.viewX + deltaX, this.viewY + deltaY);
     }
 
     home() {
@@ -106,10 +109,13 @@ export class CanvasManager {
             this.saveCurrentViewToTiles();
         }
         
-        this.viewCanvas.offsetX = x;
-        this.historyCanvas.offsetX = x;
-        this.viewCanvas.offsetY = y;
-        this.historyCanvas.offsetY = y;
+        this.viewX = x; 
+        this.viewY = y; 
+
+        this.viewCanvas.offsetX = 
+        this.historyCanvas.offsetX = Math.round(this.viewX);
+        this.viewCanvas.offsetY = 
+        this.historyCanvas.offsetY = Math.round(this.viewY);
         this.render();
     }
 
