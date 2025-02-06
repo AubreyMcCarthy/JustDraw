@@ -594,7 +594,7 @@ export class PaintTool {
         };
         this.state.currentPath.points.push({ x: posX, y: posY, force: force ? force : 1 });
         this.state.currentPath.points.push({ x: posX, y: posY, force: force ? force : 1 });
-
+        this.previousPoint = this.state.currentPath.points.at(-1);
         this.state.currentPath.bounds = {
             minX: posX,
             minY: posY,
@@ -655,7 +655,6 @@ export class PaintTool {
 
         const newPoint = { x: posX, y: posY, force: force ? force : 1  };
         const lastPoint = this.state.currentPath.points.at(-1);
-        this.state.currentPath.points.push(newPoint);
 
         this.app.canvasManager.viewCanvas.context.beginPath();
         this.app.canvasManager.viewCanvas.context.lineWidth = Math.max(this.lineWidth.value * lastPoint.force, 1);
@@ -665,6 +664,8 @@ export class PaintTool {
             // const xc = (lastPoint.x + this.previousPoint.x) / 2
             // const yc = (lastPoint.y + this.previousPoint.y) / 2
             // this.app.canvasManager.viewCanvas.context.quadraticCurveTo(lastPoint.x, lastPoint.y, xc, yc)
+            if(this.distance(newPoint, lastPoint) < this.smoothing.value)
+                return;
             
             this.drawCurve(
                 this.previousPoint, lastPoint, newPoint, 
@@ -684,6 +685,7 @@ export class PaintTool {
         };
 
         this.previousPoint = lastPoint
+        this.state.currentPath.points.push(newPoint);
     }
 
     stopDrawing(e) {
