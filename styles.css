@@ -111,8 +111,6 @@ a:hover {
   top: 10px;
   border-radius: 5px;
   overflow: visible;
-  /* transition: all 0.5s ease-in-out; */
-  max-height:600px;
 }
 
 #controls-tool-specific.minimized {

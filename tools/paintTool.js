@@ -66,6 +66,24 @@ export class PaintTool {
             
         };
 
+        this.smoothing = {
+            lable: "Line Smoothing",
+            value: 1,
+            defaultValue: 1,
+            min: 0,
+            max: 20,
+            step: 0.1,
+            validate() {
+                if(this.value < this.min)
+                    this.value = this.min
+                else if(this.value > this.max)
+                    this.value = this.max
+                this.slider.value = this.value;
+
+            },
+            
+        };
+
         this.blendModes = [
             {
                 label: "Normal",
@@ -245,7 +263,7 @@ export class PaintTool {
         this.radiusPreview.style.width = this.radiusPreview.style.height = `${this.lineWidth.value*2}px`;
     }
 
-    addSlider(o, controls) {
+    addSlider(o, controls, onChanged) {
         const slider = document.createElement('input');
         slider.id = o.lable.replace(/\s/g, "-") + "-slider";
         slider.type = 'range';
@@ -254,37 +272,16 @@ export class PaintTool {
         slider.value = o.value;
         slider.step = o.step ? o.step : 0.01;
         controls.appendChild(slider);
-        const setPreview = this.setPreview.bind(this);
+        // const setPreview = this.setPreview.bind(this);
         slider.addEventListener('input', (value) => {
             o.value = slider.value;
-            setPreview();
-            // take input from the user
-            // const number = value;
-            // let n1 = 0, n2 = 1, nextTerm;
-
-            // console.log('Fibonacci Series:');
-            // console.log(n1); // print 0
-            // console.log(n2); // print 1
-
-            // nextTerm = n1 + n2;
-
-            // while (nextTerm <= number) {
-
-            //     // print the next term
-            //     console.log(nextTerm);
-
-            //     n1 = n2;
-            //     n2 = nextTerm;
-            //     nextTerm = n1 + n2;
-            // }
-            // o.value = nextTerm;
-            // slider.value = nextTerm;
+            onChanged();
         });
-        o.reset = function() { this.value = this.defaultValue; };
+        o.reset = () => { this.value = this.defaultValue; };
         slider.addEventListener("dblclick", (event) => {
             o.value = o.defaultValue;
             slider.value = o.value;
-            setPreview();
+            onChanged();
         });
         o.slider = slider;
     }
@@ -390,9 +387,19 @@ export class PaintTool {
         radiusPreview.style.border = "2px solid rgb(91, 85, 61)";
         radiusPreview.style.backgroundColor = "rgb(47, 56, 67)";
         
-        this.addSlider(this.lineWidth, controls);
+        this.addSlider(this.lineWidth, controls, this.setPreview.bind(this));
         controls.appendChild(radiusPreviewContainer);
         radiusPreviewContainer.appendChild(radiusPreview);
+
+        const wigglePreview = document.createElement('img');
+        wigglePreview.src = "img/icon/wiggle.png";
+        wigglePreview.style.width = "100%";
+        const wigglePreviewUpdate =  () => {
+            wigglePreview.style.height = this.smoothing.value * 5 + "px";
+        };
+        wigglePreviewUpdate();
+        this.addSlider(this.smoothing, controls, wigglePreviewUpdate.bind(this));
+        controls.appendChild(wigglePreview);
 
 
         this.newCanvas();
@@ -480,9 +487,17 @@ export class PaintTool {
         this.app.canvasManager.viewCanvas.canvas.id = 'drawing-canvas';
 
         this.resetState();
-        this.app.canvasManager.viewCanvas.canvas.style.backgroundColor = this.colors.at(0).color;
 
-        this.color = this.colors.at(1).color;
+        let randomBgColor = Math.floor(Math.random() * 6);
+        this.app.canvasManager.viewCanvas.canvas.style.backgroundColor = this.colors.at(randomBgColor).color;
+
+        let randomPaintColor = Math.floor(Math.random() * 6);
+        if(randomBgColor === randomPaintColor) {
+            randomPaintColor += 1;
+            if(randomPaintColor >= 6)
+                randomPaintColor = 0;   
+        }
+        this.color = this.colors.at(randomPaintColor).color;
         this.selectColor();
 
         [this.app.canvasManager.viewCanvas.context, this.app.canvasManager.historyCanvas.context].forEach(ctx => {
@@ -495,85 +510,7 @@ export class PaintTool {
         this.app.canvasManager.renderCallbacks.push(this.redrawCanvas.bind(this));
 
         this.app.io.saveCallbacks.push(this.drawAllPaths.bind(this));
-
-        // const randomBgColor = Math.floor(Math.random() * 6);
-        // this.clearCanvas(window.innerWidth, window.innerHeight, this.colors.at(randomBgColor).color);
     }
-
-    // clearCanvas(width, height, backgroundColor, img) {
-    //     this.resetState();
-
-    //     const canvas = this.canvas ? this.canvas : document.createElement('canvas');
-    //     canvas.width = width;
-    //     canvas.height = height;
-    //     canvas.id = 'drawing-canvas';
-    //     this.canvas = canvas;
-    //     document.body.appendChild(canvas);
-
-    //     // Canvas setup
-    //     const historyCanvas = this.historyCanvas ? this.historyCanvas : document.createElement('canvas');
-    //     this.historyCanvas = historyCanvas;
-    //     historyCanvas.width = width;
-    //     historyCanvas.height = height;
-
-
-    //     const ctx = canvas.getContext("2d");
-    //     this.ctx = ctx;
-    //     const historyCtx = historyCanvas.getContext('2d');
-    //     this.historyCtx = historyCtx;
-
-    //     [this.ctx, this.historyCtx].forEach(ctx => {
-    //         ctx.strokeStyle = this.color;
-    //         ctx.lineWidth = this.lineWidth.value;
-    //         ctx.lineCap = 'round';
-    //         ctx.lineJoin = 'round';
-    //     });
-
-    //     if(img) {
-    //         ctx.drawImage(img, 0, 0);
-    //         historyCtx.drawImage(img, 0, 0);
-    //     }
-
-    //     this.canvas.style.backgroundColor = backgroundColor;
-    //     let randomPaintColor = Math.floor(Math.random() * 6);
-    //     if(backgroundColor == this.colors.at(randomPaintColor).color) {
-    //         console.log("same color");
-    //         randomPaintColor += 1;
-    //         if(randomPaintColor >= 6)
-    //             randomPaintColor = 0;   
-    //     }
-    //     this.color = this.colors.at(randomPaintColor).color;
-    //     this.selectColor();
-    // }
-
-    // loadCanvas(img, backgroundColor) {
-    //     this.clearCanvas(img.width, img.height, backgroundColor, img);
-    // }
-
-    // resize() {
-    //     window.addEventListener("resize", (event) => {
-    //         if(window.innerWidth <= this.canvas.width && window.innerHeight <= this.canvas.height)
-    //             return;
-
-    //         const width = Math.max(window.innerWidth, this.canvas.width);
-    //         const height = Math.max(window.innerWidth, this.canvas.height);
-
-            
-    //         this.canvasToPng(this.historyCanvas, (img) => {
-    //             this.canvas.width = this.historyCanvas.width = width;
-    //             this.canvas.height = this.historyCanvas.height = height;
-
-    //             // Clear active canvas
-    //             this.historyCtx.clearRect(0, 0, width, height);
-
-    //             // Copy history canvas content to active canvas
-    //             this.historyCtx.drawImage(img, 0, 0);
-
-    //             this.redrawCanvas();
-    //         })
-    //     });
-    // }
-
 
     apply() {
         // new image with contents
@@ -620,14 +557,6 @@ export class PaintTool {
     }
 
     fillColor() {
-        // const previousAction = this.app.state.previousPath();
-        // if(
-        //     previousAction != null && 
-        //     previousAction.paintAction === this.PaintActions.CanvasFill
-        //     && previousAction.color === this.color
-        // ) {
-        //     return;
-        // } 
         const colorTo = this.color;
         const currentColor = this.app.canvasManager.viewCanvas.canvas.style.backgroundColor;
 
@@ -637,6 +566,16 @@ export class PaintTool {
         const undoAction = () => {
             this.app.canvasManager.viewCanvas.canvas.style.backgroundColor = currentColor;
         }
+
+        // const previousAction = this.app.history.getPreviousAction();
+        // if(
+        //     previousAction != null && 
+        //     previousAction.action === action
+        //     && previousAction.undoAction === undoAction
+        // ) {
+        //     console.log("same bg color being applied, aborting");
+        //     return;
+        // } 
 
         this.app.history.addAction(action, undoAction);
 
@@ -663,9 +602,6 @@ export class PaintTool {
             maxY: posY,
         };
 
-        // this.ctx.beginPath();
-        // this.ctx.moveTo(posX, posY);
-        // this.ctx.stroke();
         this.app.canvasManager.viewCanvas.context.lineWidth = this.polyFill.value ? 1 : this.lineWidth.value;
         if(!this.polyFill.value)
             this.drawPoint(posX, posY, force ? force : 1)
@@ -699,13 +635,12 @@ export class PaintTool {
         return x * (1 - a) + y * a;
     } 
 
-    drawCurve(previousPoint, lastPoint, newPoint, appCanvas) {
+    drawCurve(previousPoint, lastPoint, newPoint, appCanvas, smoothing) {
         const controlPoint = this.normalize({
             x: lastPoint.x - previousPoint.x,
             y: lastPoint.y - previousPoint.y
         }) 
         const distance = this.distance(newPoint,lastPoint) * 0.5;
-        const smoothing = 1;
         controlPoint.x = lastPoint.x + controlPoint.x * distance;
         controlPoint.x = this.lerp((newPoint.x + lastPoint.x) * 0.5, controlPoint.x, smoothing);
         controlPoint.y = lastPoint.y + controlPoint.y * distance;
@@ -733,7 +668,7 @@ export class PaintTool {
             
             this.drawCurve(
                 this.previousPoint, lastPoint, newPoint, 
-                this.app.canvasManager.viewCanvas
+                this.app.canvasManager.viewCanvas, this.smoothing.value
             );
         }
         else {
@@ -751,16 +686,6 @@ export class PaintTool {
         this.previousPoint = lastPoint
     }
 
-    // addToUndoStack(a) {
-    //     this.state.paths.push(a);
-    //     this.state.redoPaths = [];
-
-    //     // If we exceed maxUndoSteps, bake the oldest path into history
-    //     if (this.state.paths.length > this.state.maxUndoSteps) {
-    //         this.bakeOldestPath();
-    //     }
-    // }
-
     stopDrawing(e) {
         this.previousPoint = null;
 
@@ -774,9 +699,6 @@ export class PaintTool {
             this.app.canvasManager.viewCanvas.context.beginPath();
             const firstPoint = this.state.currentPath.points.at(-1)
             this.app.canvasManager.viewCanvas.context.moveTo(firstPoint.x, firstPoint.y)
-            // this.state.currentPath.points.forEach(point => {
-            //     this.app.canvasManager.viewCanvas.context.lineTo(point.x, point.y);
-            // })
             const path = this.state.currentPath;
             for (let i = 1; i < path.points.length; i++) {
                 if(i > 1) {
@@ -784,7 +706,8 @@ export class PaintTool {
                         path.points[i-2],
                         path.points[i-1],
                         path.points[i],
-                        this.app.canvasManager.viewCanvas
+                        this.app.canvasManager.viewCanvas,
+                        this.smoothing.value
                     );
                 }
                 else {
@@ -826,6 +749,7 @@ export class PaintTool {
         // else 
         if (this.state.currentPath.points.length > 0) {
 
+            const boundsPush = 10 * Math.max(1, this.smoothing.value);
             const path = {
                 points: [...this.state.currentPath.points],
                 color: this.state.currentPath.color,
@@ -835,17 +759,14 @@ export class PaintTool {
                 lineWidth: this.lineWidth.value,
                 offset: {x: this.app.canvasManager.viewCanvas.offsetX, y: this.app.canvasManager.viewCanvas.offsetY},
                 bounds: {
-                    minX: this.state.currentPath.bounds.minX,
-                    minY: this.state.currentPath.bounds.minY,
-                    maxX: this.state.currentPath.bounds.maxX,
-                    maxY: this.state.currentPath.bounds.maxY,
-                }
+                    minX: this.state.currentPath.bounds.minX - boundsPush,
+                    minY: this.state.currentPath.bounds.minY - boundsPush,
+                    maxX: this.state.currentPath.bounds.maxX + boundsPush,
+                    maxY: this.state.currentPath.bounds.maxY + boundsPush,
+                },
+                smoothing: this.smoothing.value,
             };
             this.state.paths.push(path);
-
-            // const bake = () => {
-            //     this.drawCompletePath(path, this.historyCtx);
-            // };
     
             this.app.history.addAction(
                 this.redoPath.bind(this), 
@@ -854,14 +775,6 @@ export class PaintTool {
             );
     
             this.state.redoPaths = [];
-            // this.addToUndoStack({
-            //     points: [...this.state.currentPath.points],
-            //     color: this.state.currentPath.color,
-            //     paintAction: this.PaintActions.Draw,
-            //     blend: this.ctx.globalCompositeOperation,
-            //     polyFill: polyFill,
-            //     lineWidth: this.lineWidth.value,
-            // });
         }
 
         
@@ -1106,7 +1019,8 @@ export class PaintTool {
                             x: path.points[i].x + path.offset.x - viewCanvas.offsetX,
                             y: path.points[i].y + path.offset.y - viewCanvas.offsetY
                         },
-                        viewCanvas
+                        viewCanvas,
+                        path.smoothing
                     );
                 }
                 else {
