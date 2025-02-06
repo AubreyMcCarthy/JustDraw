@@ -201,6 +201,10 @@ button:disabled {
   /* transition: opacity 1s, visibility 1s; */
 }
 
+.tooltiptext, .tooltiptext::after {
+  pointer-events: none;
+}
+
 .tooltip .tooltiptext::after {
   content: "";
   position: absolute;

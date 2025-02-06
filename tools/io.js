@@ -363,36 +363,30 @@ export class IO {
 
     drawSelectionCanvas(action) {
 
-        let width = this.selection.width();
-        let height = this.selection.height();
-        let x = this.selection.x();
-        let y = this.selection.y();
+        const selectionCanvas = new AppCanvas(
+            0, 0, 
+            Math.round(this.selection.width()), 
+            Math.round(this.selection.height())
+        );
+        selectionCanvas.offsetX = this.app.canvasManager.viewCanvas.offsetX + Math.round(this.selection.x());
+        selectionCanvas.offsetY = this.app.canvasManager.viewCanvas.offsetY + Math.round(this.selection.y());
+
         if(!this.selectArea.value) {
-            width = this.paintTool.canvas.width;
-            height = this.paintTool.canvas.height;
-            x = 0;
-            y = 0;
+            selectionCanvas.match(this.app.canvasManager.viewCanvas);
         }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        this.canvas = canvas;
 
+        this.app.canvasManager.render(selectionCanvas);
+        this.app.paintTool.drawAllPaths(selectionCanvas);
 
-
-        const ctx = canvas.getContext("2d");
-        this.ctx = ctx;
-
-        ctx.drawImage(this.paintTool.canvas, -x, -y);
         if(this.fillBg.value) {
-            ctx.beginPath();
-            ctx.globalCompositeOperation = 'destination-over';
-            ctx.fillStyle = this.paintTool.canvas.style.backgroundColor;
-            ctx.rect(0, 0, canvas.width, canvas.height);
-            ctx.fill();
+            selectionCanvas.context.beginPath();
+            selectionCanvas.context.globalCompositeOperation = 'destination-over';
+            selectionCanvas.context.fillStyle = this.app.canvasManager.viewCanvas.canvas.style.backgroundColor;
+            selectionCanvas.context.rect(0, 0, selectionCanvas.canvas.width, selectionCanvas.canvas.height);
+            selectionCanvas.context.fill();
         }
 
-        canvas.toBlob(async (blob) => {
+        selectionCanvas.canvas.toBlob(async (blob) => {
             action(blob);
         }, 'image/png');
 

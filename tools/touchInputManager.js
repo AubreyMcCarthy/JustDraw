@@ -112,12 +112,34 @@ export class TouchInputManager {
             if (this.isDrawing) {
                 for (const touch of event.changedTouches) {
                     if (touch.identifier === this.pencilTouch.identifier) {
-                        this.draw(touch.clientX, touch.clientY, this.activeFingerCount, this.mapForce(touch.force));
+                        if(this.app.paintTool.panning()) {
+                            if(this.touches.get(touch.identifier).previousX) {
+                                let deltaX = touch.pageX - this.touches.get(touch.identifier).previousX;
+                                let deltaY = touch.pageY - this.touches.get(touch.identifier).previousY;
+                                this.app.canvasManager.pan(-deltaX, -deltaY);
+                            }
+                            this.touches.get(touch.identifier).previousX = touch.pageX;
+                            this.touches.get(touch.identifier).previousY = touch.pageY;
+                        }
+                        else {
+                            this.draw(touch.clientX, touch.clientY, this.activeFingerCount, this.mapForce(touch.force));
+                        }
                         break;
                     }
                 }
             }
         } 
+        // else if (this.activeFingerCount === 1){
+        //     if(this.touches.get(event.touches[0].identifier).previousX) {
+        //         let deltaX = event.touches[0].pageX - this.touches.get(event.touches[0].identifier).previousX;
+        //         let deltaY = event.touches[0].pageY - this.touches.get(event.touches[0].identifier).previousY;
+
+        //         this.draggedBy = Math.abs(deltaX) + Math.abs(deltaY);
+        //         this.app.canvasManager.pan(-deltaX, -deltaY);
+        //     }
+        //     this.touches.get(event.touches[0].identifier).previousX = event.touches[0].pageX;
+        //     this.touches.get(event.touches[0].identifier).previousY = event.touches[0].pageY;
+        // }
         else if (this.activeFingerCount === 2){
             if(this.touches.get(event.touches[0].identifier).previousX) {
                 let deltaX = (event.touches[0].pageX - this.touches.get(event.touches[0].identifier).previousX + event.touches[1].pageX - this.touches.get(event.touches[1].identifier).previousX) * 0.5;
@@ -131,7 +153,6 @@ export class TouchInputManager {
             this.touches.get(event.touches[1].identifier).previousX = event.touches[1].pageX;
             this.touches.get(event.touches[1].identifier).previousY = event.touches[1].pageY;
         }
-        // this.previousTouches = this.touches;
     }
 
     mapForce(force) {
@@ -186,6 +207,14 @@ export class TouchInputManager {
     handleFingerPaintStart(event) {
         event.preventDefault();
 
+        for (const touch of event.changedTouches) {
+            if (touch.touchType === 'stylus') {
+                this.app.paintTool.usePencilInput.btn.click();
+                this.handleTouchStart(event);
+                return;
+            }
+        }
+
         // Process each new touch
         for (const touch of event.changedTouches) {
             this.touches.set(touch.identifier, touch);
@@ -219,7 +248,18 @@ export class TouchInputManager {
         if (this.isDrawing && this.pencilTouch) {
             for (const touch of event.changedTouches) {
                 if (touch.identifier === this.pencilTouch.identifier) {
-                    this.draw(touch.clientX, touch.clientY, this.activeFingerCount, 1);
+                    if(this.app.paintTool.panning()) {
+                        if(this.touches.get(touch.identifier).previousX) {
+                            let deltaX = touch.pageX - this.touches.get(touch.identifier).previousX;
+                            let deltaY = touch.pageY - this.touches.get(touch.identifier).previousY;
+                            this.app.canvasManager.pan(-deltaX, -deltaY);
+                        }
+                        this.touches.get(touch.identifier).previousX = touch.pageX;
+                        this.touches.get(touch.identifier).previousY = touch.pageY;
+                    }
+                    else {
+                        this.draw(touch.clientX, touch.clientY, this.activeFingerCount, 1);
+                    }
                     break;
                 }
             }
@@ -308,16 +348,17 @@ export class TouchInputManager {
         const changeTouchInputMethod = this.changeTouchInputMethod.bind(this);
 
         const usePencil = event.changedTouches[0].touchType === 'stylus';
-        changeTouchInputMethod(usePencil);
-
-        if(usePencil) {
-            this.handleTouchStart(event);
-        }
-        else {
-            this.handleFingerPaintStart(event);
-        }
 
         this.paintTool.showTouchControls(usePencil, changeTouchInputMethod);
         this.app.canvasManager.viewCanvas.canvas.removeEventListener('touchstart', this.chooseInputMethod);
+        
+        if(usePencil) {
+            this.app.paintTool.usePencilInput.btn.click();
+            this.handleTouchStart(event);
+        }
+        else {
+            changeTouchInputMethod(false);
+            this.handleFingerPaintStart(event);
+        }
     }
 }

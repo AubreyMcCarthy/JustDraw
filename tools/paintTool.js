@@ -39,6 +39,14 @@ export class PaintTool {
             value: false,
             defaultValue: false,
         }
+        this.pan = {
+            label: "Pan",
+            tooltip: "pan",
+            icon: "img/icon/hand.png",
+            altIcon: "img/icon/hand.png",
+            value: false,
+            defaultValue: false,
+        }
 
         this.lineWidth = {
             lable: "Line Width",
@@ -365,6 +373,8 @@ export class PaintTool {
         controls.appendChild(colorSelect);
         // <input type="color" id="html5colorpicker" onchange="clickColor(0, -1, -1, 5)" value="#ff0000" style="width:85%;"></input>
         
+        this.addToolButton(this.pan, controls);
+
         const radiusPreviewContainer = document.createElement('div');
         radiusPreviewContainer.style.width = "100%";
         // radiusPreviewContainer.style.height = `${this.lineWidth.max*2}px`;
@@ -389,6 +399,7 @@ export class PaintTool {
         this.drawMouse();
         this.keyboardShortcuts();
         this.dragAndDropControls(controls, headerImg);
+
         // this.resize();
         this.controls = controls;
     }
@@ -673,6 +684,37 @@ export class PaintTool {
         this.app.canvasManager.viewCanvas.context.fill();
     }
 
+    distance(p1, p2) {
+        return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+    }
+
+    normalize(vector) {
+        const mag = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+        return {
+            x: vector.x / mag,
+            y: vector.y / mag
+        };
+    }
+    lerp(x, y, a) {
+        return x * (1 - a) + y * a;
+    } 
+
+    drawCurve(previousPoint, lastPoint, newPoint, appCanvas) {
+        const controlPoint = this.normalize({
+            x: lastPoint.x - previousPoint.x,
+            y: lastPoint.y - previousPoint.y
+        }) 
+        const distance = this.distance(newPoint,lastPoint) * 0.5;
+        const smoothing = 1;
+        controlPoint.x = lastPoint.x + controlPoint.x * distance;
+        controlPoint.x = this.lerp((newPoint.x + lastPoint.x) * 0.5, controlPoint.x, smoothing);
+        controlPoint.y = lastPoint.y + controlPoint.y * distance;
+        controlPoint.y = this.lerp((newPoint.y + lastPoint.y) * 0.5, controlPoint.y, smoothing);
+
+        appCanvas.context.quadraticCurveTo(
+            controlPoint.x, controlPoint.y, newPoint.x, newPoint.y);
+    }
+
     draw(posX, posY, force) {
         if (!this.state.isDrawing) return;
 
@@ -683,7 +725,20 @@ export class PaintTool {
         this.app.canvasManager.viewCanvas.context.beginPath();
         this.app.canvasManager.viewCanvas.context.lineWidth = Math.max(this.lineWidth.value * lastPoint.force, 1);
         this.app.canvasManager.viewCanvas.context.moveTo(lastPoint.x, lastPoint.y);
-        this.app.canvasManager.viewCanvas.context.lineTo(posX, posY);
+        if(this.previousPoint)
+        {
+            // const xc = (lastPoint.x + this.previousPoint.x) / 2
+            // const yc = (lastPoint.y + this.previousPoint.y) / 2
+            // this.app.canvasManager.viewCanvas.context.quadraticCurveTo(lastPoint.x, lastPoint.y, xc, yc)
+            
+            this.drawCurve(
+                this.previousPoint, lastPoint, newPoint, 
+                this.app.canvasManager.viewCanvas
+            );
+        }
+        else {
+            this.app.canvasManager.viewCanvas.context.lineTo(posX, posY);
+        }
         this.app.canvasManager.viewCanvas.context.stroke();
 
         this.state.currentPath.bounds = {
@@ -692,6 +747,8 @@ export class PaintTool {
             maxX: Math.max(this.state.currentPath.bounds.maxX, posX),
             maxY: Math.max(this.state.currentPath.bounds.maxY, posY),
         };
+
+        this.previousPoint = lastPoint
     }
 
     // addToUndoStack(a) {
@@ -705,6 +762,8 @@ export class PaintTool {
     // }
 
     stopDrawing(e) {
+        this.previousPoint = null;
+
         if (!this.state.isDrawing) return;
 
         const polyFill = 
@@ -715,9 +774,26 @@ export class PaintTool {
             this.app.canvasManager.viewCanvas.context.beginPath();
             const firstPoint = this.state.currentPath.points.at(-1)
             this.app.canvasManager.viewCanvas.context.moveTo(firstPoint.x, firstPoint.y)
-            this.state.currentPath.points.forEach(point => {
-                this.app.canvasManager.viewCanvas.context.lineTo(point.x, point.y);
-            })
+            // this.state.currentPath.points.forEach(point => {
+            //     this.app.canvasManager.viewCanvas.context.lineTo(point.x, point.y);
+            // })
+            const path = this.state.currentPath;
+            for (let i = 1; i < path.points.length; i++) {
+                if(i > 1) {
+                    this.drawCurve(
+                        path.points[i-2],
+                        path.points[i-1],
+                        path.points[i],
+                        this.app.canvasManager.viewCanvas
+                    );
+                }
+                else {
+                    this.app.canvasManager.viewCanvas.context.lineTo(
+                        path.points[i].x, 
+                        path.points[i].y 
+                    );
+                }
+            }
             this.app.canvasManager.viewCanvas.context.fill();
         }
 
@@ -910,6 +986,8 @@ export class PaintTool {
         document.addEventListener("MSPointerUp", stop, false);
     };
 
+    panning() { return this.pan.value || this.app.canvasManager.dragging }
+
     // prototype to	start drawing on mouse using canvas moveTo and lineTo
     drawMouse() {
         var clicked = 0;
@@ -922,14 +1000,14 @@ export class PaintTool {
                 return;
             clicked = 1;
             
-            if(this.app.canvasManager.dragging)
+            if(this.panning())
                 return;
             startDrawing(e.offsetX, e.offsetY);
         };
         var move = (e) => {
             if (clicked) {
-                if(this.app.canvasManager.dragging) {
-                    this.app.canvasManager.pan(-Math.round(e.movementX), -Math.round(e.movementY));
+                if(this.panning()) {
+                    this.app.canvasManager.pan(-e.movementX, -e.movementY);
                 }
                 else {
                     draw(e.offsetX, e.offsetY);
@@ -940,7 +1018,9 @@ export class PaintTool {
             if (e.which != 1) 
                 return;
             clicked = 0;
-            stopDrawing(e);
+            if(!this.panning()) {
+                stopDrawing(e);
+            }
         };
         this.app.canvasManager.viewCanvas.canvas.addEventListener("mousedown", start, false);
         this.app.canvasManager.viewCanvas.canvas.addEventListener("mousemove", move, false);
@@ -994,10 +1074,11 @@ export class PaintTool {
         // Copy history canvas content to active canvas
         this.app.canvasManager.viewCanvas.context.drawImage(this.app.canvasManager.historyCanvas.canvas, 0, 0);
 
-        // Redraw all paths in the undo stack
-        for (const path of this.state.paths) {
-            this.drawCompletePath(path, this.app.canvasManager.viewCanvas);
-        }
+        // // Redraw all paths in the undo stack
+        // for (const path of this.state.paths) {
+        //     this.drawCompletePath(path, this.app.canvasManager.viewCanvas);
+        // }
+        this.drawAllPaths(this.app.canvasManager.viewCanvas);
 
         this.selectColor();
     }
@@ -1011,10 +1092,29 @@ export class PaintTool {
             viewCanvas.context.beginPath();
             for (let i = 1; i < path.points.length; i++) {
                 viewCanvas.context.lineWidth = Math.max(path.lineWidth * path.points[i].force, 1);
-                viewCanvas.context.lineTo(
-                    path.points[i].x + path.offset.x - viewCanvas.offsetX, 
-                    path.points[i].y + path.offset.y - viewCanvas.offsetY
-                );
+                if(i > 1) {
+                    this.drawCurve(
+                        {
+                            x: path.points[i-2].x + path.offset.x - viewCanvas.offsetX,
+                            y: path.points[i-2].y + path.offset.y - viewCanvas.offsetY
+                        },
+                        {
+                            x: path.points[i-1].x + path.offset.x - viewCanvas.offsetX,
+                            y: path.points[i-1].y + path.offset.y - viewCanvas.offsetY
+                        },
+                        {
+                            x: path.points[i].x + path.offset.x - viewCanvas.offsetX,
+                            y: path.points[i].y + path.offset.y - viewCanvas.offsetY
+                        },
+                        viewCanvas
+                    );
+                }
+                else {
+                    viewCanvas.context.lineTo(
+                        path.points[i].x + path.offset.x - viewCanvas.offsetX, 
+                        path.points[i].y + path.offset.y - viewCanvas.offsetY
+                    );
+                }
             }
             viewCanvas.context.stroke();
             if(path.polyFill)
@@ -1026,7 +1126,6 @@ export class PaintTool {
 
     drawAllPaths(viewCanvas) {
         for(const path of this.state.paths) {
-            console.log(`saving path ${path} to canvas ${viewCanvas.offsetX} ${viewCanvas.offsetY}`);
             this.drawCompletePath(path, viewCanvas);
         }
     }
@@ -1052,7 +1151,7 @@ export class PaintTool {
                 maxX: path.offset.x + path.bounds.maxX,
                 maxY: path.offset.y + path.bounds.maxY
             };
-            console.log("path is out of bounds" + bounds);
+            // console.log("path is out of bounds" + bounds);
             this.app.canvasManager.applyToTiles(bounds, (tile) => {
                 drawCompletePath(path, tile);
             });

@@ -13,6 +13,15 @@ export class AppCanvas {
     clear() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
+
+    match(targetAppCanvas) {
+        this.x = targetAppCanvas.x;
+        this.y = targetAppCanvas.y;
+        this.offsetX = targetAppCanvas.offsetX;
+        this.offsetY = targetAppCanvas.offsetY;
+        this.canvas.width = targetAppCanvas.canvas.width;
+        this.canvas.height = targetAppCanvas.canvas.height;
+    }
 }
 
 export class CanvasManager {
@@ -63,7 +72,7 @@ export class CanvasManager {
         this.viewCanvas.canvas.height = 
         this.historyCanvas.canvas.height = 
             window.innerHeight;
-        this.render();
+        this.renderMain();
 
         // this.historyCanvas.context.clearRect(0, 0, this.viewCanvas.width, this.viewCanvas.height);
 
@@ -73,9 +82,9 @@ export class CanvasManager {
     }
 
     // Get tile at specified coordinates, creating if necessary
-    getTile(x, y) {
+    getTile(x, y, createIfDoesntExist = true) {
         const key = `${x}_${y}`;
-        if (!this.tiles.has(key)) {
+        if (createIfDoesntExist && !this.tiles.has(key)) {
             this.app.console.log(`creating tile ${key}`);
             this.tiles.set(key, new AppCanvas(x, y, this.tileSize, this.tileSize));
             this.app.console.add(this.tiles.get(key).canvas);
@@ -116,7 +125,7 @@ export class CanvasManager {
         this.historyCanvas.offsetX = Math.round(this.viewX);
         this.viewCanvas.offsetY = 
         this.historyCanvas.offsetY = Math.round(this.viewY);
-        this.render();
+        this.renderMain();
     }
 
     // Save the current view content to underlying tiles
@@ -176,39 +185,46 @@ export class CanvasManager {
         }
     }
 
+    renderMain() {
+        this.render(this.historyCanvas);
+        for(var i = 0; i < this.renderCallbacks.length; i++) {
+            this.renderCallbacks[i]();
+        }
+    }
+
     // Render the current view from tiles
-    render() {
+    render(appCanvas) {
         // this.app.console.log(`rendering ${this.tiles.entries().length} tiles to canvas. Which is ${this.viewCanvas.canvas.width} wide, and ${this.viewCanvas.canvas.height} high`);
-        this.historyCanvas.clear()
+        appCanvas.clear()
         
-        const startCoords = this.getTileCoordinates(this.viewCanvas.offsetX, this.viewCanvas.offsetY);
+        const startCoords = this.getTileCoordinates(appCanvas.offsetX, appCanvas.offsetY);
         const endCoords = this.getTileCoordinates(
-            this.viewCanvas.offsetX + this.viewCanvas.canvas.width,
-            this.viewCanvas.offsetY + this.viewCanvas.canvas.height
+            appCanvas.offsetX + appCanvas.canvas.width,
+            appCanvas.offsetY + appCanvas.canvas.height
         );
 
         // Draw all visible tiles
         for (let tileX = startCoords.tileX; tileX <= endCoords.tileX; tileX++) {
             for (let tileY = startCoords.tileY; tileY <= endCoords.tileY; tileY++) {
                 const tile = this.getTile(tileX, tileY);
+                if(tile == null)
+                    continue;
                 
-                this.historyCanvas.context.globalCompositeOperation = 'source-over';
-                this.historyCanvas.context.drawImage(
+                appCanvas.context.globalCompositeOperation = 'source-over';
+                appCanvas.context.drawImage(
                     tile.canvas,
                     0,
                     0,
                     this.tileSize,
                     this.tileSize,
-                    tileX * this.tileSize - this.viewCanvas.offsetX,
-                    tileY * this.tileSize - this.viewCanvas.offsetY,
+                    tileX * this.tileSize - appCanvas.offsetX,
+                    tileY * this.tileSize - appCanvas.offsetY,
                     this.tileSize,
                     this.tileSize
                 );
             }
         }
-        for(var i = 0; i < this.renderCallbacks.length; i++) {
-            this.renderCallbacks[i]();
-        }
+
     }
 
     // Handle drawing operations
