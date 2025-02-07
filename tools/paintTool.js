@@ -70,7 +70,7 @@ export class PaintTool {
             lable: "Line Smoothing",
             value: 1,
             defaultValue: 1,
-            min: 0,
+            min: 1,
             max: 20,
             step: 0.1,
             validate() {
@@ -594,7 +594,7 @@ export class PaintTool {
         };
         this.state.currentPath.points.push({ x: posX, y: posY, force: force ? force : 1 });
         this.state.currentPath.points.push({ x: posX, y: posY, force: force ? force : 1 });
-        this.previousPoint = this.state.currentPath.points.at(-1);
+        // this.previousPoint = this.state.currentPath.points.at(-1);
         this.state.currentPath.bounds = {
             minX: posX,
             minY: posY,
@@ -664,8 +664,8 @@ export class PaintTool {
             // const xc = (lastPoint.x + this.previousPoint.x) / 2
             // const yc = (lastPoint.y + this.previousPoint.y) / 2
             // this.app.canvasManager.viewCanvas.context.quadraticCurveTo(lastPoint.x, lastPoint.y, xc, yc)
-            if(this.distance(newPoint, lastPoint) < this.smoothing.value)
-                return;
+            // if(this.distance(newPoint, this.previousPoint) < this.smoothing.value)
+            //     return;
             
             this.drawCurve(
                 this.previousPoint, lastPoint, newPoint, 
