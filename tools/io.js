@@ -74,37 +74,37 @@ export class IO {
         const toggleBgBtn = this.addToggleButton(this.fillBg, controls);
 
         // download
-        // save as
-        const saveAsBtn = this.addButton({
-            icon: "img/icon/save.png", 
-            tooltip: "save",
-            action: this.saveProject.bind(this),            
-
-        }, controls);
-        // const loadBtn = this.addButton({
+        // // save as
+        // const saveAsBtn = this.addButton({
         //     icon: "img/icon/save.png", 
-        //     tooltip: "load",
-        //     action: this.loadProject.bind(this),            
+        //     tooltip: "save",
+        //     action: this.saveProject.bind(this),            
 
         // }, controls);
+        // // const loadBtn = this.addButton({
+        // //     icon: "img/icon/save.png", 
+        // //     tooltip: "load",
+        // //     action: this.loadProject.bind(this),            
 
-        // <label for="fileInput" class="custom-file-upload tooltip">📂<span class="tooltiptext">Open Image</span></label>
-        const loadBtnLabel = document.createElement('label');
-        loadBtnLabel.htmlFor = 'loadBtn';
-        loadBtnLabel.className = 'custom-file-upload tooltip';
-        this.loadSVGIcon('img/icon/open.png', loadBtnLabel, 'Open');
-        controls.appendChild(loadBtnLabel);
+        // // }, controls);
 
-        const loadProject = this.loadProject.bind(this);
-        const loadBtn = document.createElement('input');
-        loadBtn.type = 'file';
-        loadBtn.id = 'loadBtn';
-        loadBtn.addEventListener('change', async (e) => {
-            if (e.target.files.length > 0) {
-                await loadProject(e.target.files[0]);
-            }
-        });
-        controls.appendChild(loadBtn);
+        // // <label for="fileInput" class="custom-file-upload tooltip">📂<span class="tooltiptext">Open Image</span></label>
+        // const loadBtnLabel = document.createElement('label');
+        // loadBtnLabel.htmlFor = 'loadBtn';
+        // loadBtnLabel.className = 'custom-file-upload tooltip';
+        // this.loadSVGIcon('img/icon/open.png', loadBtnLabel, 'Open');
+        // controls.appendChild(loadBtnLabel);
+
+        // const loadProject = this.loadProject.bind(this);
+        // const loadBtn = document.createElement('input');
+        // loadBtn.type = 'file';
+        // loadBtn.id = 'loadBtn';
+        // loadBtn.addEventListener('change', async (e) => {
+        //     if (e.target.files.length > 0) {
+        //         await loadProject(e.target.files[0]);
+        //     }
+        // });
+        // controls.appendChild(loadBtn);
 
         
 
